@@ -4,9 +4,12 @@ import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -20,6 +23,22 @@ export default function CheckoutPage() {
     deliveryMethod: 'standard',
     paymentMethod: 'cod',
   });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        fullName: profile.full_name || '',
+        email: profile.email || user?.email || '',
+        phone: profile.phone || '',
+      }));
+    } else if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+      }));
+    }
+  }, [profile, user]);
 
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -55,7 +74,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -102,7 +121,7 @@ export default function CheckoutPage() {
                     animate={{ opacity: 1, x: 0 }}
                   >
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Shipping Information</h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       <div>
                         <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -248,7 +267,7 @@ export default function CheckoutPage() {
                     animate={{ opacity: 1, x: 0 }}
                   >
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment Method</h2>
-                    
+
                     <div className="space-y-3 mb-6">
                       <label className="flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-primary transition-colors">
                         <input
@@ -305,7 +324,7 @@ export default function CheckoutPage() {
                     animate={{ opacity: 1, x: 0 }}
                   >
                     <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Your Order</h2>
-                    
+
                     <div className="bg-cream rounded-2xl p-6 mb-6">
                       <h3 className="font-semibold text-gray-900 mb-3">Shipping Address</h3>
                       <p className="text-gray-600">
@@ -325,8 +344,8 @@ export default function CheckoutPage() {
                     <div className="bg-cream rounded-2xl p-6 mb-6">
                       <h3 className="font-semibold text-gray-900 mb-3">Payment Method</h3>
                       <p className="text-gray-600 capitalize">
-                        {formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 
-                         formData.paymentMethod === 'upi' ? 'UPI Payment' : 'Credit/Debit Card'}
+                        {formData.paymentMethod === 'cod' ? 'Cash on Delivery' :
+                          formData.paymentMethod === 'upi' ? 'UPI Payment' : 'Credit/Debit Card'}
                       </p>
                     </div>
 

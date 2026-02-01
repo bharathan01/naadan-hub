@@ -4,13 +4,20 @@ import { supabase } from '../../../lib/supabase';
 
 interface Order {
   id: string;
-  order_number: string;
   created_at: string;
   total_amount: number;
   status: string;
-  items: any[];
-  shipping_address: any;
-  tracking_number?: string;
+  order_type: string;
+  customer_name: string;
+  customer_phone: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  landmark?: string;
+  order_items?: any[];
 }
 
 interface OrderHistoryProps {
@@ -35,14 +42,14 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
       setError(null);
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, order_items(*)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
-      
+
       setOrders(data || []);
     } catch (error) {
       console.error('Error loading orders:', error);
@@ -126,7 +133,7 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    Order #{order.order_number}
+                    Order #{order.id.slice(0, 8)}
                   </h3>
                   <p className="text-sm text-gray-600">
                     Placed on {new Date(order.created_at).toLocaleDateString('en-IN', {
@@ -142,23 +149,19 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
                 </span>
               </div>
 
-              {order.items && order.items.length > 0 && (
+              {order.order_items && order.order_items.length > 0 && (
                 <div className="space-y-3 mb-4">
-                  {order.items.map((item: any, index: number) => (
+                  {order.order_items.map((item: any, index: number) => (
                     <div key={item.id || index} className="flex items-center space-x-4">
-                      <img
-                        src={item.image || 'https://readdy.ai/api/search-image?query=organic%20product%20package%20simple%20background&width=80&height=80&seq=order-item&orientation=squarish'}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://readdy.ai/api/search-image?query=organic%20product%20package%20simple%20background&width=80&height=80&seq=order-item&orientation=squarish';
-                        }}
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      {/* Using a placeholder for items if they don't have images in the items table */}
+                      <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center text-primary font-black border">
+                        {item.quantity}
                       </div>
-                      <p className="font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{item.product_name || item.name}</h4>
+                        <p className="text-sm text-gray-600">Unit Price: ₹{item.unit_price || item.price}</p>
+                      </div>
+                      <p className="font-semibold text-gray-900">₹{((item.unit_price || item.price) * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
@@ -178,14 +181,6 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
                 </button>
               </div>
 
-              {order.tracking_number && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <i className="ri-truck-line mr-2"></i>
-                    Tracking Number: <span className="font-semibold">{order.tracking_number}</span>
-                  </p>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -213,8 +208,8 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
                 <h4 className="font-semibold text-gray-900 mb-2">Order Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-600">Order Number</p>
-                    <p className="font-medium">{selectedOrder.order_number}</p>
+                    <p className="text-gray-600">Order ID</p>
+                    <p className="font-medium">#{selectedOrder.id.slice(0, 8)}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Order Date</p>
@@ -239,40 +234,44 @@ export default function OrderHistory({ userId }: OrderHistoryProps) {
                 </div>
               </div>
 
-              {selectedOrder.shipping_address && (
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Customer Details</h4>
+                  <div className="p-4 bg-gray-50 rounded-lg text-sm">
+                    <p className="font-medium">{selectedOrder.customer_name}</p>
+                    <p className="text-gray-600">{selectedOrder.customer_phone}</p>
+                  </div>
+                </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Shipping Address</h4>
                   <div className="p-4 bg-gray-50 rounded-lg text-sm">
-                    <p className="font-medium">{selectedOrder.shipping_address.full_name}</p>
-                    <p className="text-gray-600">{selectedOrder.shipping_address.phone}</p>
-                    <p className="text-gray-600 mt-2">
-                      {selectedOrder.shipping_address.address_line1}
-                      {selectedOrder.shipping_address.address_line2 && `, ${selectedOrder.shipping_address.address_line2}`}
+                    <p className="text-gray-900">
+                      {selectedOrder.address_line1}
+                      {selectedOrder.address_line2 && `, ${selectedOrder.address_line2}`}
+                      {selectedOrder.landmark && <br />}
+                      {selectedOrder.landmark && `Landmark: ${selectedOrder.landmark}`}
                       <br />
-                      {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} - {selectedOrder.shipping_address.pincode}
+                      {selectedOrder.city}, {selectedOrder.state} - {selectedOrder.postal_code}
+                      <br />
+                      {selectedOrder.country}
                     </p>
                   </div>
                 </div>
-              )}
+              </div>
 
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
                 <div className="space-y-3">
-                  {selectedOrder.items?.map((item: any, index: number) => (
+                  {selectedOrder.order_items?.map((item: any, index: number) => (
                     <div key={item.id || index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                      <img
-                        src={item.image || 'https://readdy.ai/api/search-image?query=organic%20product%20package%20simple%20background&width=80&height=80&seq=order-detail&orientation=squarish'}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://readdy.ai/api/search-image?query=organic%20product%20package%20simple%20background&width=80&height=80&seq=order-detail&orientation=squarish';
-                        }}
-                      />
-                      <div className="flex-1">
-                        <h5 className="font-medium text-gray-900">{item.name}</h5>
-                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-primary font-black border">
+                        {item.quantity}
                       </div>
-                      <p className="font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</p>
+                      <div className="flex-1">
+                        <h5 className="font-medium text-gray-900">{item.product_name}</h5>
+                        <p className="text-sm text-gray-600">₹{item.unit_price} each</p>
+                      </div>
+                      <p className="font-semibold text-gray-900">₹{(item.unit_price * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>

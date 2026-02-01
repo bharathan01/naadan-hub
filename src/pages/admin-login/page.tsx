@@ -1,20 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { authService } from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
+  const { role, user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reactive redirection for admins only
+  useEffect(() => {
+    if (user && role) {
+      if (role === 'admin') {
+        navigate('/admin-dashboard');
+      } else if (role) {
+        // Not an admin, sign out to be safe
+        toast.error('Access denied. Administrator privileges required.');
+        authService.signOut();
+      }
+    }
+  }, [user, role, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement admin authentication logic
-    console.log('Admin login:', formData);
-    // navigate('/admin/dashboard');
+    setLoading(true);
+    try {
+      await authService.signIn(formData.email, formData.password);
+      toast.success('Admin authentication requested...');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to authenticate as admin');
+      setLoading(false);
+    }
   };
 
   return (
@@ -110,10 +133,11 @@ export default function AdminLoginPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 py-3 rounded-xl font-bold hover:from-yellow-500 hover:to-orange-600 transition-all cursor-pointer whitespace-nowrap shadow-lg"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 py-3 rounded-xl font-bold hover:from-yellow-500 hover:to-orange-600 transition-all cursor-pointer whitespace-nowrap shadow-lg disabled:opacity-50"
             >
-              <i className="ri-login-box-line mr-2"></i>
-              Access Admin Panel
+              <i className={`${loading ? 'ri-loader-4-line animate-spin' : 'ri-login-box-line'} mr - 2`}></i>
+              {loading ? 'Authenticating...' : 'Access Admin Panel'}
             </button>
           </form>
 

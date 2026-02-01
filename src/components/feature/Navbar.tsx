@@ -1,22 +1,21 @@
-
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+import LogoutModal from '../auth/LogoutModal';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const location = useLocation();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
-  // Mock user state - replace with your authentication later
-  const [user, setUser] = useState({
-    isLoggedIn: true, // Set to false to see login button
-    name: 'John Doe',
-    email: 'john@example.com',
-    type: 'user' // 'user', 'admin', or 'seller'
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, role, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,7 +41,7 @@ export default function Navbar() {
 
     updateCartCount();
     window.addEventListener('cartUpdated', updateCartCount);
-    
+
     return () => {
       window.removeEventListener('cartUpdated', updateCartCount);
     };
@@ -70,14 +69,28 @@ export default function Navbar() {
     { name: 'Contact', path: '/contact' },
   ];
 
-  const handleLogout = () => {
-    setUser({ isLoggedIn: false, name: '', email: '', type: 'user' });
+  const handleLogoutClick = () => {
     setIsProfileMenuOpen(false);
-    // Add your logout logic here
+    setIsMobileMenuOpen(false);
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setLogoutLoading(true);
+    try {
+      await signOut();
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (error: any) {
+      toast.error('Failed to logout');
+    } finally {
+      setLogoutLoading(false);
+      setIsLogoutModalOpen(false);
+    }
   };
 
   const getDashboardLink = () => {
-    switch (user.type) {
+    switch (role) {
       case 'admin':
         return '/admin-dashboard';
       case 'seller':
@@ -88,7 +101,7 @@ export default function Navbar() {
   };
 
   const getDashboardText = () => {
-    switch (user.type) {
+    switch (role) {
       case 'admin':
         return 'Admin Dashboard';
       case 'seller':
@@ -98,22 +111,23 @@ export default function Navbar() {
     }
   };
 
+  const userName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+
   return (
     <>
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'bg-white shadow-md' : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2 lg:space-x-3 flex-shrink-0">
-              <img 
-                src="https://static.readdy.ai/image/3a79f3d26d575281f009959c52307d03/f5e502cd8fa34d230e539c2257e9ddf3.png" 
-                alt="Naadan Hub Logo" 
+              <img
+                src="https://static.readdy.ai/image/3a79f3d26d575281f009959c52307d03/f5e502cd8fa34d230e539c2257e9ddf3.png"
+                alt="Naadan Hub Logo"
                 className="h-8 lg:h-12 w-auto"
               />
               <span className={`text-lg lg:text-2xl font-bold font-serif ${isScrolled ? 'text-primary' : 'text-white'}`}>
@@ -127,13 +141,12 @@ export default function Navbar() {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`text-sm font-medium transition-colors whitespace-nowrap ${
-                    location.pathname === link.path
+                  className={`text-sm font-medium transition-colors whitespace-nowrap ${location.pathname === link.path
                       ? isScrolled ? 'text-primary' : 'text-white'
                       : isScrolled
-                      ? 'text-gray-700 hover:text-primary'
-                      : 'text-white/90 hover:text-white'
-                  }`}
+                        ? 'text-gray-700 hover:text-primary'
+                        : 'text-white/90 hover:text-white'
+                    }`}
                 >
                   {link.name}
                 </Link>
@@ -144,12 +157,10 @@ export default function Navbar() {
             <div className="flex items-center space-x-2 lg:space-x-4">
               {/* Cart */}
               <Link to="/cart" className="relative cursor-pointer">
-                <button className={`p-2 rounded-full transition-colors cursor-pointer ${
-                  isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
-                }`}>
-                  <i className={`ri-shopping-cart-line text-xl ${
-                    isScrolled ? 'text-gray-900' : 'text-white'
-                  }`}></i>
+                <button className={`p-2 rounded-full transition-colors cursor-pointer ${isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
+                  }`}>
+                  <i className={`ri-shopping-cart-line text-xl ${isScrolled ? 'text-gray-900' : 'text-white'
+                    }`}></i>
                 </button>
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-accent text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -169,24 +180,21 @@ export default function Navbar() {
               </a>
 
               {/* Profile Menu */}
-              {user.isLoggedIn ? (
+              {user ? (
                 <div className="relative profile-menu">
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className={`flex items-center space-x-2 p-2 rounded-full transition-colors cursor-pointer ${
-                      isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
-                    }`}
+                    className={`flex items-center space-x-2 p-2 rounded-full transition-colors cursor-pointer ${isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
+                      }`}
                   >
-                    <div className={`w-8 h-8 rounded-full bg-primary flex items-center justify-center ${
-                      isScrolled ? 'text-white' : 'text-white'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full bg-primary flex items-center justify-center ${isScrolled ? 'text-white' : 'text-white'
+                      }`}>
                       <span className="text-sm font-bold">
-                        {user.name.charAt(0).toUpperCase()}
+                        {userName.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <i className={`ri-arrow-down-s-line text-lg hidden lg:block ${
-                      isScrolled ? 'text-gray-700' : 'text-white'
-                    }`}></i>
+                    <i className={`ri-arrow-down-s-line text-lg hidden lg:block ${isScrolled ? 'text-gray-700' : 'text-white'
+                      }`}></i>
                   </button>
 
                   {/* Profile Dropdown */}
@@ -198,15 +206,14 @@ export default function Navbar() {
                     >
                       {/* User Info */}
                       <div className="px-4 py-3 border-b">
-                        <p className="font-semibold text-gray-900">{user.name}</p>
+                        <p className="font-semibold text-gray-900">{userName}</p>
                         <p className="text-sm text-gray-600">{user.email}</p>
-                        {user.type !== 'user' && (
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-                            user.type === 'admin' 
-                              ? 'bg-red-100 text-red-800' 
+                        {role && role !== 'user' && (
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${role === 'admin'
+                              ? 'bg-red-100 text-red-800'
                               : 'bg-green-100 text-green-800'
-                          }`}>
-                            {user.type === 'admin' ? 'Admin' : 'Seller'}
+                            }`}>
+                            {role === 'admin' ? 'Admin' : 'Seller'}
                           </span>
                         )}
                       </div>
@@ -218,11 +225,11 @@ export default function Navbar() {
                           onClick={() => setIsProfileMenuOpen(false)}
                           className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
                         >
-                          <i className={`${user.type === 'admin' ? 'ri-dashboard-line' : user.type === 'seller' ? 'ri-store-line' : 'ri-user-line'} mr-3 text-lg`}></i>
+                          <i className={`${role === 'admin' ? 'ri-dashboard-line' : role === 'seller' ? 'ri-store-line' : 'ri-user-line'} mr-3 text-lg`}></i>
                           {getDashboardText()}
                         </Link>
-                        
-                        {user.type === 'user' && (
+
+                        {role === 'user' && (
                           <>
                             <Link
                               to="/order-tracking"
@@ -236,10 +243,10 @@ export default function Navbar() {
                         )}
 
                         <hr className="my-1" />
-                        
+
                         <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50 cursor-pointer"
+                          onClick={handleLogoutClick}
+                          className="w-full flex items-center px-4 py-2 text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
                         >
                           <i className="ri-logout-box-line mr-3 text-lg"></i>
                           Logout
@@ -251,11 +258,10 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                    isScrolled 
-                      ? 'bg-primary text-white hover:bg-primary/90' 
+                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors cursor-pointer whitespace-nowrap ${isScrolled
+                      ? 'bg-primary text-white hover:bg-primary/90'
                       : 'bg-white text-primary hover:bg-white/90'
-                  }`}
+                    }`}
                 >
                   <i className="ri-user-line text-lg"></i>
                   <span>Login</span>
@@ -265,9 +271,8 @@ export default function Navbar() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`lg:hidden w-10 h-10 flex items-center justify-center cursor-pointer ${
-                  isScrolled ? 'text-gray-700' : 'text-white'
-                }`}
+                className={`lg:hidden w-10 h-10 flex items-center justify-center cursor-pointer ${isScrolled ? 'text-gray-700' : 'text-white'
+                  }`}
               >
                 <i className={`${isMobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'} text-2xl`}></i>
               </button>
@@ -278,7 +283,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
@@ -286,14 +291,14 @@ export default function Navbar() {
         >
           <div className="px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
             {/* Mobile Profile Section */}
-            {user.isLoggedIn ? (
+            {user ? (
               <div className="pb-3 mb-3 border-b">
                 <div className="flex items-center space-x-3 px-4 py-2">
                   <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-                    <span className="font-bold">{user.name.charAt(0).toUpperCase()}</span>
+                    <span className="font-bold">{userName.charAt(0).toUpperCase()}</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{user.name}</p>
+                    <p className="font-semibold text-gray-900">{userName}</p>
                     <p className="text-sm text-gray-600">{user.email}</p>
                   </div>
                 </div>
@@ -302,7 +307,7 @@ export default function Navbar() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center space-x-3 py-3 px-4 text-primary hover:bg-primary/10 rounded-lg font-medium cursor-pointer"
                 >
-                  <i className={`${user.type === 'admin' ? 'ri-dashboard-line' : user.type === 'seller' ? 'ri-store-line' : 'ri-user-line'} text-xl`}></i>
+                  <i className={`${role === 'admin' ? 'ri-dashboard-line' : role === 'seller' ? 'ri-store-line' : 'ri-user-line'} text-xl`}></i>
                   <span>{getDashboardText()}</span>
                 </Link>
               </div>
@@ -322,16 +327,15 @@ export default function Navbar() {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`block py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
-                  location.pathname === link.path
+                className={`block py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${location.pathname === link.path
                     ? 'bg-primary/10 text-primary'
                     : 'text-gray-700 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
             ))}
-            
+
             {/* Mobile WhatsApp Link */}
             <a
               href="https://wa.me/919876543210"
@@ -344,12 +348,9 @@ export default function Navbar() {
             </a>
 
             {/* Mobile Logout */}
-            {user.isLoggedIn && (
+            {user && (
               <button
-                onClick={() => {
-                  handleLogout();
-                  setIsMobileMenuOpen(false);
-                }}
+                onClick={handleLogoutClick}
                 className="w-full flex items-center space-x-3 py-3 px-4 text-red-600 hover:bg-red-50 rounded-lg font-medium cursor-pointer border-t mt-3"
               >
                 <i className="ri-logout-box-line text-xl"></i>
@@ -359,6 +360,14 @@ export default function Navbar() {
           </div>
         </motion.div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleConfirmLogout}
+        loading={logoutLoading}
+      />
     </>
   );
 }

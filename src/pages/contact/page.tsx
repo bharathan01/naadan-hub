@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import { useAuth } from '../../context/AuthContext';
 
 export default function ContactPage() {
+  const { user, profile } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,6 +16,22 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+
+  useEffect(() => {
+    if (profile) {
+      setFormData(prev => ({
+        ...prev,
+        name: profile.full_name || '',
+        email: profile.email || user?.email || '',
+        phone: profile.phone || '',
+      }));
+    } else if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+      }));
+    }
+  }, [profile, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +75,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -179,9 +197,8 @@ export default function ContactPage() {
                   </button>
 
                   {submitMessage && (
-                    <div className={`mt-4 p-4 rounded-xl ${
-                      submitMessage.includes('Thank') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                    }`}>
+                    <div className={`mt-4 p-4 rounded-xl ${submitMessage.includes('Thank') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                      }`}>
                       {submitMessage}
                     </div>
                   )}

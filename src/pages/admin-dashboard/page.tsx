@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
@@ -8,25 +7,52 @@ import ProductManagement from './components/ProductManagement';
 import OrderManagement from './components/OrderManagement';
 import SiteContent from './components/SiteContent';
 import SellerManagement from './components/SellerManagement';
+import CategoryManagement from './components/CategoryManagement';
+import { adminService } from '../../services/admin.service';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalBlogs: 0,
+    pendingOrders: 0,
+    totalSellers: 0,
+    pendingApprovals: 0,
+    monthlyRevenue: 0
+  });
 
-  // Mock admin data
-  const stats = {
-    totalProducts: 156,
-    totalBlogs: 23,
-    pendingOrders: 12,
-    totalSellers: 45,
-    pendingApprovals: 8,
-    monthlyRevenue: 125000
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const data = await adminService.getPlatformStats();
+        setStats({
+          totalProducts: typeof data.totalProducts === 'number' ? data.totalProducts : 0,
+          totalBlogs: 0,
+          pendingOrders: typeof data.totalOrders === 'number' ? data.totalOrders : 0,
+          totalSellers: 0,
+          pendingApprovals: 0,
+          monthlyRevenue: 0
+        });
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch platform statistics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: 'ri-dashboard-line' },
     { id: 'products', name: 'Products', icon: 'ri-shopping-bag-line' },
+    { id: 'categories', name: 'Categories', icon: 'ri-list-check' },
     { id: 'blogs', name: 'Blog Posts', icon: 'ri-article-line' },
-    { id: 'orders', name: 'Orders', icon: 'ri-truck-line' },
+    { id: 'orders', name: 'Orders', icon: 'ri-bill-line' },
+    { id: 'users', name: 'Users', icon: 'ri-group-line' },
     { id: 'sellers', name: 'Sellers', icon: 'ri-group-line' },
     { id: 'content', name: 'Site Content', icon: 'ri-edit-line' },
   ];
@@ -34,7 +60,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -55,83 +81,96 @@ export default function AdminDashboard() {
 
           {/* Stats Overview */}
           {activeTab === 'overview' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
-            >
-              <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Products</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <i className="ri-shopping-bag-line text-2xl text-blue-600"></i>
-                  </div>
+            <>
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm">
+                  {error}
                 </div>
-              </div>
+              )}
+              {loading ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"
+                >
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Products</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-shopping-bag-line text-2xl text-blue-600"></i>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Blog Posts</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalBlogs}</p>
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Blog Posts</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalBlogs}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-article-line text-2xl text-green-600"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <i className="ri-article-line text-2xl text-green-600"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Pending Orders</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-truck-line text-2xl text-yellow-600"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                    <i className="ri-truck-line text-2xl text-yellow-600"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Sellers</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalSellers}</p>
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Sellers</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalSellers}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-group-line text-2xl text-purple-600"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <i className="ri-group-line text-2xl text-purple-600"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.pendingApprovals}</p>
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.pendingApprovals}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-time-line text-2xl text-red-600"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                    <i className="ri-time-line text-2xl text-red-600"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-6 border lg:col-span-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
-                    <p className="text-3xl font-bold text-primary">₹{stats.monthlyRevenue.toLocaleString()}</p>
+                  <div className="bg-white rounded-xl shadow-sm p-6 border lg:col-span-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                        <p className="text-3xl font-bold text-primary">₹{stats.monthlyRevenue.toLocaleString()}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i className="ri-money-rupee-circle-line text-2xl text-primary"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <i className="ri-money-rupee-circle-line text-2xl text-primary"></i>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+                </motion.div>
+              )}
+            </>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -142,11 +181,10 @@ export default function AdminDashboard() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all cursor-pointer whitespace-nowrap ${activeTab === tab.id
+                      ? 'bg-primary text-white'
+                      : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
                     <i className={`${tab.icon} text-xl`}></i>
                     <span className="font-medium">{tab.name}</span>
@@ -175,7 +213,7 @@ export default function AdminDashboard() {
                       </div>
                       <span className="text-sm text-gray-500">2 hours ago</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-lg">
                       <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                         <i className="ri-user-add-line text-white"></i>
@@ -186,7 +224,7 @@ export default function AdminDashboard() {
                       </div>
                       <span className="text-sm text-gray-500">5 hours ago</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-4 p-4 bg-yellow-50 rounded-lg">
                       <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
                         <i className="ri-truck-line text-white"></i>
@@ -200,8 +238,9 @@ export default function AdminDashboard() {
                   </div>
                 </motion.div>
               )}
-              
+
               {activeTab === 'products' && <ProductManagement />}
+              {activeTab === 'categories' && <CategoryManagement />}
               {activeTab === 'blogs' && <BlogManagement />}
               {activeTab === 'orders' && <OrderManagement />}
               {activeTab === 'sellers' && <SellerManagement />}

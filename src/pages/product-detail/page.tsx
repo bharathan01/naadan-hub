@@ -4,101 +4,111 @@ import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import WhatsAppOrderModal from '../../components/feature/WhatsAppOrderModal';
+import { productService } from '../../services/product.service';
+import toast from 'react-hot-toast';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const [product, setProduct] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [showAddedNotification, setShowAddedNotification] = useState(false);
 
-  const product = {
-    id: 1,
-    name: 'Kerala Black Pepper',
-    price: 450,
-    originalPrice: 550,
-    rating: 5,
-    reviews: 128,
-    inStock: true,
-    stock: 50,
-    category: 'Spices & Herbs',
-    images: [
-      'https://readdy.ai/api/search-image?query=premium%20Kerala%20black%20pepper%20in%20small%20bowl%20on%20pure%20white%20background%20high%20quality%20organic%20spice%20close-up%20detailed%20view%20natural%20lighting&width=600&height=600&seq=pd1&orientation=squarish',
-      'https://readdy.ai/api/search-image?query=black%20pepper%20plant%20with%20peppercorns%20growing%20on%20vine%20Kerala%20farm%20natural%20setting&width=600&height=600&seq=pd2&orientation=squarish',
-      'https://readdy.ai/api/search-image?query=black%20pepper%20powder%20and%20whole%20peppercorns%20on%20white%20background%20spice%20comparison&width=600&height=600&seq=pd3&orientation=squarish',
-      'https://readdy.ai/api/search-image?query=Kerala%20black%20pepper%20packaging%20organic%20certified%20product%20label&width=600&height=600&seq=pd4&orientation=squarish',
-    ],
-    description: 'Premium quality Kerala black pepper, hand-picked from organic farms in the Western Ghats. Known for its bold flavor and aromatic properties, our black pepper is sun-dried naturally to preserve its essential oils and pungency. Perfect for enhancing the taste of any dish.',
-    features: [
-      'Organically grown without pesticides',
-      'Hand-picked and sun-dried',
-      'High piperine content',
-      'Rich aroma and bold flavor',
-      'Certified organic',
-      'Direct from Kerala farms'
-    ],
-    usage: [
-      'Add to curries and gravies for enhanced flavor',
-      'Grind fresh over salads and soups',
-      'Use in marinades for meat and fish',
-      'Perfect for pickling and preserving',
-      'Mix with other spices for masala blends'
-    ],
-    specifications: {
-      weight: '250g',
-      origin: 'Wayanad, Kerala',
-      certification: 'Organic Certified',
-      shelfLife: '12 months',
-      storage: 'Store in cool, dry place'
+  useEffect(() => {
+    if (id) {
+      loadProductData(id);
+    }
+  }, [id]);
+
+  const loadProductData = async (productId: string) => {
+    setLoading(true);
+    try {
+      const data = await productService.getProductById(productId);
+      if (data) {
+        setProduct(data);
+        // Fetch related products (limit 3, same category)
+        const { data: related } = await productService.getProducts({
+          category: data.category,
+          from: 0,
+          to: 3
+        });
+        setRelatedProducts(related.filter((p: any) => p.id !== productId).slice(0, 3));
+      }
+    } catch (error: any) {
+      toast.error('Failed to load product details');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const relatedProducts = [
-    { id: 3, name: 'Organic Turmeric Powder', price: 320, image: 'https://readdy.ai/api/search-image?query=organic%20turmeric%20powder%20in%20bowl%20with%20fresh%20turmeric%20root%20on%20white%20background%20vibrant%20golden%20yellow%20color%20natural%20Kerala%20spice&width=300&height=300&seq=rp1&orientation=squarish' },
-    { id: 6, name: 'Organic Cardamom', price: 890, image: 'https://readdy.ai/api/search-image?query=green%20cardamom%20pods%20in%20wooden%20bowl%20on%20white%20background%20premium%20Kerala%20spice%20aromatic%20organic%20quality&width=300&height=300&seq=rp2&orientation=squarish' },
-    { id: 10, name: 'Organic Cinnamon Sticks', price: 280, image: 'https://readdy.ai/api/search-image?query=Ceylon%20cinnamon%20sticks%20on%20white%20background%20premium%20organic%20spice%20natural%20aromatic&width=300&height=300&seq=rp3&orientation=squarish' },
-  ];
-
   const handleAddToCart = () => {
+    if (!product) return;
     const cartItem = {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images[0],
+      image: product.images?.[0] || '',
       quantity: quantity,
     };
 
-    // Get existing cart from localStorage
     const existingCart = localStorage.getItem('cart');
     const cart = existingCart ? JSON.parse(existingCart) : [];
-
-    // Check if product already exists in cart
     const existingItemIndex = cart.findIndex((item: any) => item.id === product.id);
 
     if (existingItemIndex > -1) {
-      // Update quantity if product exists
       cart[existingItemIndex].quantity += quantity;
     } else {
-      // Add new product to cart
       cart.push(cartItem);
     }
 
-    // Save to localStorage
     localStorage.setItem('cart', JSON.stringify(cart));
-
-    // Dispatch custom event to update navbar cart count
     window.dispatchEvent(new Event('cartUpdated'));
-
-    // Show notification
     setShowAddedNotification(true);
     setTimeout(() => setShowAddedNotification(false), 3000);
   };
 
+  const handleWhatsAppOrder = () => {
+    if (!product) return;
+    setIsOrderModalOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="pt-40 pb-20 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading traditional goodness...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="pt-40 pb-20 text-center">
+          <i className="ri-error-warning-line text-6xl text-gray-300 mb-4 block"></i>
+          <h1 className="text-2xl font-bold text-gray-900">Product not found</h1>
+          <p className="text-gray-500 mt-2 mb-8">The product you're looking for might have been moved or removed.</p>
+          <Link to="/products" className="bg-primary text-white px-8 py-3 rounded-full font-bold">Back to Shop</Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
-      {/* Added to Cart Notification */}
+
       {showAddedNotification && (
         <motion.div
           initial={{ opacity: 0, y: -50 }}
@@ -121,227 +131,210 @@ export default function ProductDetailPage() {
             <i className="ri-arrow-right-s-line"></i>
             <Link to="/products" className="hover:text-primary cursor-pointer">Products</Link>
             <i className="ri-arrow-right-s-line"></i>
-            <span className="text-gray-900">{product.name}</span>
+            <span className="text-gray-900 truncate max-w-[200px]">{product.name}</span>
           </nav>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
             <div>
-              <div className="rounded-3xl overflow-hidden bg-gray-50 mb-4 aspect-square">
+              <div className="rounded-[2.5rem] overflow-hidden bg-gray-50 mb-6 aspect-square shadow-inner border border-gray-100">
                 <img
-                  src={product.images[selectedImage]}
+                  src={product.images?.[selectedImage] || 'https://via.placeholder.com/600?text=No+Image'}
                   alt={product.name}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-cover object-top transition-all duration-500"
                 />
               </div>
               <div className="grid grid-cols-4 gap-4">
-                {product.images.map((image, index) => (
+                {product.images?.map((image: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`rounded-xl overflow-hidden aspect-square cursor-pointer ${
-                      selectedImage === index ? 'ring-4 ring-primary' : 'ring-1 ring-gray-200'
-                    }`}
+                    className={`rounded-2xl overflow-hidden aspect-square cursor-pointer transition-all ${selectedImage === index ? 'ring-4 ring-primary shadow-lg scale-105' : 'ring-1 ring-gray-200 opacity-70 hover:opacity-100'
+                      }`}
                   >
                     <img
                       src={image}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center space-x-2 mb-3">
-                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2 mb-4">
+                <span className="inline-flex items-center space-x-1 px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
                   <i className="ri-leaf-line"></i>
-                  <span>Organic Certified</span>
+                  <span>100% Natural</span>
                 </span>
-                {product.inStock && (
-                  <span className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                    <i className="ri-checkbox-circle-fill"></i>
-                    <span>In Stock</span>
-                  </span>
-                )}
+                <span className="inline-flex items-center space-x-1 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider">
+                  <i className="ri-shield-check-line"></i>
+                  <span>Verified Seller</span>
+                </span>
               </div>
 
-              <h1 className="text-4xl font-bold text-gray-900 mb-4 font-serif">{product.name}</h1>
+              <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 font-serif leading-tight">{product.name}</h1>
 
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="flex items-center space-x-1">
-                  {[...Array(product.rating)].map((_, i) => (
-                    <i key={i} className="ri-star-fill text-yellow-400 text-lg"></i>
-                  ))}
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="flex items-center text-yellow-400">
+                  <i className="ri-star-fill"></i>
+                  <i className="ri-star-fill"></i>
+                  <i className="ri-star-fill"></i>
+                  <i className="ri-star-fill"></i>
+                  <i className="ri-star-fill"></i>
                 </div>
-                <span className="text-gray-600">({product.reviews} reviews)</span>
+                <span className="text-gray-400 font-bold text-sm uppercase tracking-widest">Premium Quality</span>
               </div>
 
-              <div className="flex items-baseline space-x-3 mb-6">
-                <span className="text-5xl font-bold text-primary">₹{product.price}</span>
-                {product.originalPrice && (
-                  <>
-                    <span className="text-2xl text-gray-400 line-through">₹{product.originalPrice}</span>
-                    <span className="px-3 py-1 bg-accent text-white rounded-full text-sm font-semibold">
-                      Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                    </span>
-                  </>
-                )}
+              <div className="flex items-baseline space-x-4 mb-8 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                <span className="text-5xl font-black text-primary">₹{product.price}</span>
+                <span className="text-gray-400 font-medium line-through">₹{Math.round(product.price * 1.2)}</span>
+                <span className="bg-orange-500 text-white px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-tighter">Save 20%</span>
               </div>
 
-              <p className="text-gray-600 leading-relaxed mb-8">{product.description}</p>
+              <p className="text-gray-600 leading-relaxed mb-8 text-lg">{product.description}</p>
 
-              <div className="bg-cream rounded-2xl p-6 mb-8">
-                <h3 className="font-semibold text-gray-900 mb-4">Quantity</h3>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center border-2 border-gray-200 rounded-full">
+              <div className="space-y-6 mb-8">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 uppercase tracking-widest text-sm">Select Quantity</h3>
+                  <span className="text-xs font-bold text-gray-400 uppercase">{product.stock_quantity} units available</span>
+                </div>
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center bg-white border-2 border-gray-100 rounded-2xl p-1 shadow-sm">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-primary cursor-pointer whitespace-nowrap"
+                      className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-primary transition-colors cursor-pointer"
                     >
                       <i className="ri-subtract-line text-xl"></i>
                     </button>
-                    <span className="w-16 text-center font-semibold text-lg">{quantity}</span>
+                    <span className="w-12 text-center font-black text-xl text-gray-800">{quantity}</span>
                     <button
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                      className="w-12 h-12 flex items-center justify-center text-gray-600 hover:text-primary cursor-pointer whitespace-nowrap"
+                      onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                      className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-primary transition-colors cursor-pointer"
                     >
                       <i className="ri-add-line text-xl"></i>
                     </button>
                   </div>
-                  <span className="text-sm text-gray-500">({product.stock} available)</span>
                 </div>
               </div>
 
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 bg-primary text-white py-4 rounded-full font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center space-x-2 cursor-pointer whitespace-nowrap"
+                  disabled={product.stock_quantity === 0}
+                  className="flex-1 bg-gray-900 text-white py-5 rounded-[1.5rem] font-bold hover:bg-black transition-all flex items-center justify-center space-x-3 cursor-pointer shadow-xl disabled:opacity-50"
                 >
-                  <i className="ri-shopping-cart-line text-xl"></i>
+                  <i className="ri-shopping-cart-2-line text-2xl"></i>
                   <span>Add to Cart</span>
                 </button>
-                <Link
-                  to="/cart"
-                  className="flex-1 bg-accent text-white py-4 rounded-full font-semibold hover:bg-accent/90 transition-colors flex items-center justify-center space-x-2 cursor-pointer whitespace-nowrap"
+                <button
+                  onClick={handleWhatsAppOrder}
+                  disabled={product.stock_quantity === 0}
+                  className="flex-1 bg-[#25D366] text-white py-5 rounded-[1.5rem] font-bold hover:bg-[#128C7E] transition-all flex items-center justify-center space-x-3 cursor-pointer shadow-xl shadow-green-100 disabled:opacity-50"
                 >
-                  <i className="ri-flashlight-line text-xl"></i>
-                  <span>Buy Now</span>
-                </Link>
+                  <i className="ri-whatsapp-line text-2xl"></i>
+                  <span>Order on WhatsApp</span>
+                </button>
               </div>
 
-              <div className="border-t border-gray-200 pt-6 space-y-3">
-                <div className="flex items-center space-x-3 text-gray-600">
-                  <i className="ri-truck-line text-xl text-primary"></i>
-                  <span>Free delivery on orders above ₹500</span>
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-8">
+                <div className="flex items-center space-x-3 text-gray-500">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500">
+                    <i className="ri-truck-line text-xl"></i>
+                  </div>
+                  <span className="text-sm font-semibold">Fast Delivery</span>
                 </div>
-                <div className="flex items-center space-x-3 text-gray-600">
-                  <i className="ri-shield-check-line text-xl text-primary"></i>
-                  <span>100% Organic & Certified</span>
-                </div>
-                <div className="flex items-center space-x-3 text-gray-600">
-                  <i className="ri-arrow-go-back-line text-xl text-primary"></i>
-                  <span>Easy returns within 7 days</span>
+                <div className="flex items-center space-x-3 text-gray-500">
+                  <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500">
+                    <i className="ri-exchange-funds-line text-xl"></i>
+                  </div>
+                  <span className="text-sm font-semibold">Easy Returns</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="mb-20">
-            <div className="border-b border-gray-200 mb-8">
-              <div className="flex space-x-8">
-                {['details', 'usage', 'specifications'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`pb-4 font-semibold capitalize cursor-pointer whitespace-nowrap ${
-                      activeTab === tab
-                        ? 'text-primary border-b-2 border-primary'
-                        : 'text-gray-500 hover:text-gray-700'
+            <div className="flex space-x-12 border-b border-gray-100 mb-10 overflow-x-auto no-scrollbar">
+              {['description', 'details', 'shipping'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-4 font-bold uppercase tracking-widest text-xs transition-all cursor-pointer whitespace-nowrap relative ${activeTab === tab ? 'text-primary' : 'text-gray-400 hover:text-gray-600'
                     }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+                >
+                  {tab}
+                  {activeTab === tab && (
+                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full" />
+                  )}
+                </button>
+              ))}
             </div>
 
-            {activeTab === 'details' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="prose max-w-none"
-              >
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Product Features</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {product.features.map((feature, index) => (
-                    <li key={index} className="flex items-start space-x-3">
-                      <i className="ri-checkbox-circle-fill text-primary text-xl mt-1"></i>
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            {activeTab === 'usage' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Usage Instructions</h3>
-                <div className="space-y-4">
-                  {product.usage.map((instruction, index) => (
-                    <div key={index} className="flex items-start space-x-4 bg-cream p-4 rounded-xl">
-                      <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <p className="text-gray-600">{instruction}</p>
+            <div className="bg-gray-50 p-8 md:p-12 rounded-[3rem]">
+              {activeTab === 'description' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="prose max-w-none">
+                  <h3 className="text-xl font-black text-gray-900 mb-4">About this traditional product</h3>
+                  <p className="text-gray-600 text-lg leading-relaxed">{product.description}</p>
+                  <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-3xl shadow-sm">
+                      <h4 className="font-bold text-primary mb-3 uppercase tracking-wider text-xs">Origin</h4>
+                      <p className="text-gray-900 font-bold">Traditional Kerala Farms</p>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === 'specifications' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Product Specifications</h3>
-                <div className="bg-cream rounded-2xl p-8">
-                  <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Object.entries(product.specifications).map(([key, value]) => (
-                      <div key={key}>
-                        <dt className="text-sm text-gray-500 mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1')}</dt>
-                        <dd className="text-lg font-semibold text-gray-900">{value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              </motion.div>
-            )}
+                    <div className="bg-white p-6 rounded-3xl shadow-sm">
+                      <h4 className="font-bold text-primary mb-3 uppercase tracking-wider text-xs">Category</h4>
+                      <p className="text-gray-900 font-bold">{product.category}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              {activeTab === 'details' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-widest">Technical Specifications</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between p-4 bg-white rounded-2xl">
+                      <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Weight</span>
+                      <span className="text-gray-900 font-black">500g (Standard)</span>
+                    </div>
+                    <div className="flex justify-between p-4 bg-white rounded-2xl">
+                      <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Store</span>
+                      <span className="text-gray-900 font-black">{product.profiles?.store_name || 'Naadan Hub'}</span>
+                    </div>
+                    <div className="flex justify-between p-4 bg-white rounded-2xl">
+                      <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Status</span>
+                      <span className="text-green-600 font-black uppercase text-xs">{product.status}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              {activeTab === 'shipping' && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-xl font-black text-gray-900 mb-4">Shipping & Returns</h3>
+                  <p className="text-gray-600 text-lg">We offer fast and secure shipping across India. Most orders are delivered within 3-5 business days. Due to the fresh nature of our products, we ensure premium packaging to maintain traditional taste and quality.</p>
+                </motion.div>
+              )}
+            </div>
           </div>
 
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 font-serif">Related Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-product-shop>
+          <div className="pt-20 border-t border-gray-100">
+            <h2 className="text-4xl font-black text-gray-900 mb-10 font-serif">You May Also Like</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {relatedProducts.map((relatedProduct) => (
                 <Link
                   key={relatedProduct.id}
                   to={`/product/${relatedProduct.id}`}
-                  className="group block bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all cursor-pointer"
+                  className="group bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 hover:shadow-2xl transition-all p-2"
                 >
-                  <div className="aspect-square bg-gray-50">
+                  <div className="aspect-square bg-gray-50 rounded-[2.2rem] overflow-hidden mb-6">
                     <img
-                      src={relatedProduct.image}
+                      src={relatedProduct.images?.[0] || 'https://via.placeholder.com/400?text=No+Image'}
                       alt={relatedProduct.name}
-                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-semibold text-gray-900 mb-2">{relatedProduct.name}</h3>
-                    <span className="text-2xl font-bold text-primary">₹{relatedProduct.price}</span>
+                  <div className="px-6 pb-6 text-center">
+                    <h3 className="font-bold text-gray-900 mb-2 truncate group-hover:text-primary transition-colors">{relatedProduct.name}</h3>
+                    <span className="text-2xl font-black text-gray-900">₹{relatedProduct.price}</span>
                   </div>
                 </Link>
               ))}
@@ -350,6 +343,12 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      <WhatsAppOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        product={product}
+        quantity={quantity}
+      />
       <Footer />
       <WhatsAppButton />
     </div>

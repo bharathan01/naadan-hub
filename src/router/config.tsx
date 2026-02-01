@@ -1,5 +1,6 @@
 import { lazy } from 'react';
-import type { RouteObject } from 'react-router-dom';
+import { Navigate, type RouteObject } from 'react-router-dom';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 const HomePage = lazy(() => import('../pages/home/page'));
 const ProductsPage = lazy(() => import('../pages/products/page'));
@@ -16,8 +17,6 @@ const OrderTrackingPage = lazy(() => import('../pages/order-tracking/page'));
 const SellerProfilePage = lazy(() => import('../pages/seller-profile/page'));
 const LoginPage = lazy(() => import('../pages/login/page'));
 const RegisterPage = lazy(() => import('../pages/register/page'));
-const AdminLoginPage = lazy(() => import('../pages/admin-login/page'));
-const SellerLoginPage = lazy(() => import('../pages/seller-login/page'));
 const SellerRegisterPage = lazy(() => import('../pages/seller-register/page'));
 const AdminDashboard = lazy(() => import('../pages/admin-dashboard/page'));
 const SellerDashboard = lazy(() => import('../pages/seller-dashboard/page'));
@@ -86,11 +85,11 @@ const routes: RouteObject[] = [
   },
   {
     path: '/admin-login',
-    element: <AdminLoginPage />,
+    element: <Navigate to="/login" replace />,
   },
   {
     path: '/seller-login',
-    element: <SellerLoginPage />,
+    element: <Navigate to="/login" replace />,
   },
   {
     path: '/seller-register',
@@ -98,11 +97,19 @@ const routes: RouteObject[] = [
   },
   {
     path: '/admin-dashboard',
-    element: <AdminDashboard />,
+    element: (
+      <ProtectedRoute allowedRoles={['admin']} fallbackPath="/login">
+        <AdminDashboard />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/seller-dashboard',
-    element: <SellerDashboard />,
+    element: (
+      <ProtectedRoute allowedRoles={['seller', 'admin']} fallbackPath="/login">
+        <SellerDashboard />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '*',

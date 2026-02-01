@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import toast from 'react-hot-toast';
 
 interface ProfileInfoProps {
   user: User;
@@ -11,16 +11,17 @@ interface ProfileData {
   full_name: string;
   phone: string;
   email: string;
+  role: string;
 }
 
 export default function ProfileInfo({ user }: ProfileInfoProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [profileData, setProfileData] = useState<ProfileData>({
     full_name: '',
     phone: '',
     email: user.email || '',
+    role: 'user',
   });
 
   useEffect(() => {
@@ -30,16 +31,17 @@ export default function ProfileInfo({ user }: ProfileInfoProps) {
   const loadProfile = async () => {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('id', user.id)
+        .maybeSingle();
 
       if (data) {
         setProfileData({
           full_name: data.full_name || '',
           phone: data.phone || '',
-          email: user.email || '',
+          email: data.email || user.email || '',
+          role: data.role || 'user',
         });
       }
     } catch (error) {
@@ -49,66 +51,62 @@ export default function ProfileInfo({ user }: ProfileInfoProps) {
 
   const handleSave = async () => {
     setLoading(true);
-    setMessage('');
-
     try {
       const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
+        .from('profiles')
+        .update({
           full_name: profileData.full_name,
           phone: profileData.phone,
-          updated_at: new Date().toISOString(),
-        });
+        })
+        .eq('id', user.id);
 
       if (error) throw error;
 
-      setMessage('Profile updated successfully!');
+      toast.success('Profile updated successfully!');
       setIsEditing(false);
-      setTimeout(() => setMessage(''), 3000);
     } catch (error: any) {
-      setMessage(error.message || 'Failed to update profile');
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+    <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+          <p className="text-sm text-gray-500 mt-1">Update your personal details and contact information.</p>
+        </div>
         {!isEditing ? (
           <button
             onClick={() => setIsEditing(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center justify-center space-x-2 px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all cursor-pointer whitespace-nowrap shadow-lg shadow-primary/20"
           >
-            <i className="ri-edit-line"></i>
-            <span>Edit Profile</span>
+            <i className="ri-edit-line text-lg"></i>
+            <span className="font-semibold">Edit Profile</span>
           </button>
         ) : (
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <button
               onClick={() => {
                 setIsEditing(false);
                 loadProfile();
               }}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+              className="px-6 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all cursor-pointer whitespace-nowrap font-semibold"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+              className="flex items-center justify-center space-x-2 px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap shadow-lg shadow-primary/20 font-semibold"
             >
               {loading ? (
-                <>
-                  <i className="ri-loader-4-line animate-spin"></i>
-                  <span>Saving...</span>
-                </>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <i className="ri-save-line"></i>
+                  <i className="ri-save-line text-lg"></i>
                   <span>Save Changes</span>
                 </>
               )}
@@ -117,52 +115,82 @@ export default function ProfileInfo({ user }: ProfileInfoProps) {
         )}
       </div>
 
-      {message && (
-        <div className={`mb-6 p-4 rounded-lg ${message.includes('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {message}
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Full Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="ri-user-line text-gray-400"></i>
+              </div>
+              <input
+                type="text"
+                value={profileData.full_name}
+                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                disabled={!isEditing}
+                className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary focus:outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
 
-      <div className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={profileData.full_name}
-            onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-            disabled={!isEditing}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all disabled:bg-gray-50 disabled:text-gray-500"
-            placeholder="Enter your full name"
-          />
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Email Address
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="ri-mail-line text-gray-400"></i>
+              </div>
+              <input
+                type="email"
+                value={profileData.email}
+                disabled
+                className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-gray-400 cursor-not-allowed"
+              />
+            </div>
+            <p className="mt-2 text-xs text-gray-400 italic">Registered email cannot be changed.</p>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
-          </label>
-          <input
-            type="email"
-            value={profileData.email}
-            disabled
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-          />
-          <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-        </div>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Phone Number
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="ri-phone-line text-gray-400"></i>
+              </div>
+              <input
+                type="tel"
+                value={profileData.phone}
+                onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                disabled={!isEditing}
+                className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary focus:outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400"
+                placeholder="+91 98765 43210"
+              />
+            </div>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            value={profileData.phone}
-            onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-            disabled={!isEditing}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all disabled:bg-gray-50 disabled:text-gray-500"
-            placeholder="+91 98765 43210"
-          />
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Account Type
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <i className="ri-shield-user-line text-gray-400"></i>
+              </div>
+              <input
+                type="text"
+                value={profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1)}
+                disabled
+                className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl bg-gray-50 text-gray-400 capitalize"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

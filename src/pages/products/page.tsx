@@ -1,51 +1,121 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import WhatsAppOrderModal from '../../components/feature/WhatsAppOrderModal';
+import { productService, Product } from '../../services/product.service';
+import toast from 'react-hot-toast';
+
+const ITEMS_PER_PAGE = 6;
+
+const ProductSkeleton = () => (
+  <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
+    <div className="aspect-square bg-gray-200" />
+    <div className="p-5 space-y-3">
+      <div className="h-5 bg-gray-200 rounded-lg w-3/4" />
+      <div className="flex space-x-1">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-4 w-4 bg-gray-200 rounded" />
+        ))}
+      </div>
+      <div className="h-8 bg-gray-200 rounded-lg w-1/3" />
+      <div className="h-12 bg-gray-200 rounded-full w-full" />
+    </div>
+  </div>
+);
 
 export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [selectedOrderProduct, setSelectedOrderProduct] = useState<Product | null>(null);
 
-  const categories = [
-    { id: 'all', name: 'All Products' },
-    { id: 'chips', name: 'Naadan Chips' },
-    { id: 'tapioca', name: 'Tapioca Products' },
-    { id: 'powders', name: 'Spice Powders' },
-    { id: 'vegetables', name: 'Fresh Vegetables' },
-    { id: 'rice', name: 'Traditional Rice' },
-    { id: 'coconut', name: 'Coconut Products' },
-  ];
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback((node: any) => {
+    if (loadingMore || loading) return;
+    if (observer.current) observer.current.disconnect();
 
-  const products = [
-    { id: 1, name: 'Naadan Banana Chips - 500g', category: 'chips', price: 180, rating: 5, reviews: 145, image: 'https://readdy.ai/api/search-image?query=crispy%20Kerala%20banana%20chips%20in%20transparent%20package%20golden%20yellow%20color%20traditional%20homemade%20snack%20simple%20white%20background%20authentic%20product%20photography&width=300&height=300&seq=p1&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Naadan%20Banana%20Chips%20500g%20-%20Rs180' },
-    { id: 2, name: 'Tapioca Chips - 250g', category: 'chips', price: 150, rating: 5, reviews: 98, image: 'https://readdy.ai/api/search-image?query=crispy%20tapioca%20chips%20cassava%20chips%20in%20package%20on%20simple%20white%20background%20Kerala%20traditional%20snack%20homemade%20natural&width=300&height=300&seq=p2&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Tapioca%20Chips%20250g%20-%20Rs150' },
-    { id: 3, name: 'Jackfruit Chips - 200g', category: 'chips', price: 160, rating: 5, reviews: 87, image: 'https://readdy.ai/api/search-image?query=crispy%20jackfruit%20chips%20in%20package%20on%20simple%20white%20background%20Kerala%20traditional%20snack%20golden%20color%20homemade&width=300&height=300&seq=p3&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Jackfruit%20Chips%20200g%20-%20Rs160' },
-    { id: 4, name: 'Fresh Tapioca - 1kg', category: 'tapioca', price: 60, rating: 5, reviews: 234, image: 'https://readdy.ai/api/search-image?query=fresh%20tapioca%20cassava%20root%20peeled%20and%20whole%20on%20simple%20white%20background%20Kerala%20traditional%20vegetable%20natural%20organic%20farm%20fresh&width=300&height=300&seq=p4&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Fresh%20Tapioca%201kg%20-%20Rs60' },
-    { id: 5, name: 'Tapioca Flour - 500g', category: 'tapioca', price: 80, rating: 5, reviews: 156, image: 'https://readdy.ai/api/search-image?query=tapioca%20flour%20cassava%20starch%20powder%20in%20package%20on%20simple%20white%20background%20Kerala%20traditional%20food%20ingredient&width=300&height=300&seq=p5&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Tapioca%20Flour%20500g%20-%20Rs80' },
-    { id: 6, name: 'Bay Leaf Powder - 100g', category: 'powders', price: 120, rating: 5, reviews: 142, image: 'https://readdy.ai/api/search-image?query=bay%20leaf%20powder%20in%20glass%20jar%20with%20fresh%20bay%20leaves%20on%20simple%20white%20background%20Kerala%20spice%20organic%20natural%20aromatic&width=300&height=300&seq=p6&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Bay%20Leaf%20Powder%20100g%20-%20Rs120' },
-    { id: 7, name: 'Turmeric Powder - 250g', category: 'powders', price: 140, rating: 5, reviews: 198, image: 'https://readdy.ai/api/search-image?query=organic%20turmeric%20powder%20in%20glass%20jar%20vibrant%20golden%20yellow%20color%20simple%20white%20background%20Kerala%20spice%20natural&width=300&height=300&seq=p7&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Turmeric%20Powder%20250g%20-%20Rs140' },
-    { id: 8, name: 'Chilli Powder - 200g', category: 'powders', price: 100, rating: 5, reviews: 167, image: 'https://readdy.ai/api/search-image?query=red%20chilli%20powder%20in%20glass%20jar%20vibrant%20red%20color%20simple%20white%20background%20Kerala%20spice%20hot%20natural&width=300&height=300&seq=p8&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Chilli%20Powder%20200g%20-%20Rs100' },
-    { id: 9, name: 'Coriander Powder - 200g', category: 'powders', price: 90, rating: 5, reviews: 134, image: 'https://readdy.ai/api/search-image?query=coriander%20powder%20in%20glass%20jar%20simple%20white%20background%20Kerala%20spice%20aromatic%20natural%20organic&width=300&height=300&seq=p9&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Coriander%20Powder%20200g%20-%20Rs90' },
-    { id: 10, name: 'Fresh Organic Tomatoes - 1kg', category: 'vegetables', price: 60, rating: 5, reviews: 276, image: 'https://readdy.ai/api/search-image?query=fresh%20red%20organic%20tomatoes%20on%20white%20background%20farm%20fresh%20vegetables%20natural%20healthy%20produce&width=300&height=300&seq=p10&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Fresh%20Organic%20Tomatoes%201kg%20-%20Rs60' },
-    { id: 11, name: 'Fresh Curry Leaves - 100g', category: 'vegetables', price: 40, rating: 5, reviews: 312, image: 'https://readdy.ai/api/search-image?query=fresh%20green%20curry%20leaves%20on%20white%20background%20aromatic%20Kerala%20herb%20organic%20natural&width=300&height=300&seq=p11&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Fresh%20Curry%20Leaves%20100g%20-%20Rs40' },
-    { id: 12, name: 'Organic Ginger - 500g', category: 'vegetables', price: 80, rating: 5, reviews: 189, image: 'https://readdy.ai/api/search-image?query=fresh%20organic%20ginger%20root%20on%20white%20background%20natural%20farm%20produce%20healthy%20spice&width=300&height=300&seq=p12&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Organic%20Ginger%20500g%20-%20Rs80' },
-    { id: 13, name: 'Red Rice - 1kg', category: 'rice', price: 120, rating: 5, reviews: 203, image: 'https://readdy.ai/api/search-image?query=red%20rice%20grains%20in%20wooden%20bowl%20on%20white%20background%20traditional%20Kerala%20rice%20organic%20healthy&width=300&height=300&seq=p13&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Red%20Rice%201kg%20-%20Rs120' },
-    { id: 14, name: 'Black Rice - 1kg', category: 'rice', price: 180, rating: 5, reviews: 112, image: 'https://readdy.ai/api/search-image?query=black%20rice%20grains%20in%20bowl%20on%20white%20background%20traditional%20Kerala%20rice%20organic%20nutritious&width=300&height=300&seq=p14&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Black%20Rice%201kg%20-%20Rs180' },
-    { id: 15, name: 'Virgin Coconut Oil - 500ml', category: 'coconut', price: 380, rating: 5, reviews: 245, image: 'https://readdy.ai/api/search-image?query=virgin%20coconut%20oil%20in%20glass%20bottle%20on%20white%20background%20pure%20natural%20Kerala%20coconut%20oil%20premium%20quality&width=300&height=300&seq=p15&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Virgin%20Coconut%20Oil%20500ml%20-%20Rs380' },
-    { id: 16, name: 'Coconut Milk Powder - 200g', category: 'coconut', price: 220, rating: 5, reviews: 178, image: 'https://readdy.ai/api/search-image?query=coconut%20milk%20powder%20in%20package%20on%20white%20background%20natural%20Kerala%20coconut%20product&width=300&height=300&seq=p16&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Coconut%20Milk%20Powder%20200g%20-%20Rs220' },
-    { id: 17, name: 'Banana Chips Spicy - 500g', category: 'chips', price: 190, rating: 5, reviews: 167, image: 'https://readdy.ai/api/search-image?query=spicy%20Kerala%20banana%20chips%20in%20package%20red%20color%20traditional%20snack%20simple%20white%20background&width=300&height=300&seq=p17&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Banana%20Chips%20Spicy%20500g%20-%20Rs190' },
-    { id: 18, name: 'Tapioca Starch - 1kg', category: 'tapioca', price: 150, rating: 5, reviews: 134, image: 'https://readdy.ai/api/search-image?query=tapioca%20starch%20powder%20in%20package%20on%20white%20background%20Kerala%20traditional%20ingredient%20pure%20white&width=300&height=300&seq=p18&orientation=squarish', inStock: true, whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Tapioca%20Starch%201kg%20-%20Rs150' },
-  ];
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
 
-  const filteredProducts = selectedCategory === 'all' 
-    ? products 
-    : products.filter(p => p.category === selectedCategory);
+    if (node) observer.current.observe(node);
+  }, [loadingMore, hasMore, loading]);
 
-  const handleWhatsAppOrder = (product: any) => {
-    window.open(product.whatsappLink, '_blank');
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    setProducts([]);
+    setPage(0);
+    setHasMore(true);
+    loadProducts(0, true);
+  }, [selectedCategory, sortBy]);
+
+  useEffect(() => {
+    if (page > 0) {
+      loadProducts(page);
+    }
+  }, [page]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await productService.getCategories();
+      setCategories([{ id: 'all', name: 'All Products', slug: 'all' }, ...data]);
+    } catch (error: any) {
+      toast.error('Failed to load categories');
+    }
+  };
+
+  const loadProducts = async (currentPage: number, reset = false) => {
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    try {
+      const from = currentPage * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data, count } = await productService.getProducts({
+        category: selectedCategory,
+        sortBy,
+        from,
+        to
+      });
+
+      if (reset) {
+        setProducts(data);
+      } else {
+        setProducts(prev => [...prev, ...data]);
+      }
+
+      setTotalCount(count);
+      setHasMore(data.length === ITEMS_PER_PAGE && (products.length + data.length) < count);
+    } catch (error: any) {
+      toast.error('Failed to load products');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const handleWhatsAppOrder = (product: Product) => {
+    setSelectedOrderProduct(product);
+    setIsOrderModalOpen(true);
   };
 
   return (
@@ -70,17 +140,16 @@ export default function ProductsPage() {
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
               <div className="bg-cream rounded-2xl p-6 sticky top-24">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Categories</h3>
-                <div className="space-y-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 font-sans">Categories</h3>
+                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                   {categories.map((category) => (
                     <button
                       key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-                        selectedCategory === category.id
-                          ? 'bg-primary text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                      onClick={() => setSelectedCategory(category.name === 'All Products' ? 'all' : category.name)}
+                      className={`w-full text-left px-4 py-3 rounded-xl transition-all cursor-pointer whitespace-nowrap font-medium ${(selectedCategory === 'all' && category.name === 'All Products') || selectedCategory === category.name
+                        ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]'
+                        : 'text-gray-700 hover:bg-gray-100'
+                        }`}
                     >
                       {category.name}
                     </button>
@@ -88,16 +157,15 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Sort By</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 font-sans">Sort By</h3>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 text-sm focus:outline-none focus:border-primary cursor-pointer transition-all font-medium"
                   >
-                    <option value="featured">Featured</option>
+                    <option value="featured">Newest Arrivals</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rated</option>
                   </select>
                 </div>
               </div>
@@ -105,73 +173,106 @@ export default function ProductsPage() {
 
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
-                <p className="text-gray-600">
-                  Showing <strong>{filteredProducts.length}</strong> products
+                <p className="text-gray-600 font-medium">
+                  Showing <strong>{products.length}</strong> of {totalCount} products
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-product-shop>
-                {filteredProducts.map((product, index) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="group block bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all"
-                  >
-                    <div className="relative aspect-square bg-gray-50">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                        <i className="ri-plant-line text-green-600"></i>
-                        <span>Farm Fresh</span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5">
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary transition-colors">
-                        {product.name}
-                      </h3>
-                      
-                      <div className="flex items-center space-x-2 mb-3">
-                        <div className="flex items-center space-x-1">
-                          {[...Array(product.rating)].map((_, i) => (
-                            <i key={i} className="ri-star-fill text-yellow-400 text-sm"></i>
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-500">({product.reviews})</span>
-                      </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {loading ? (
+                  [...Array(6)].map((_, i) => <ProductSkeleton key={i} />)
+                ) : (
+                  <>
+                    <AnimatePresence>
+                      {products.map((product, index) => (
+                        <motion.div
+                          key={product.id}
+                          ref={index === products.length - 1 ? lastElementRef : null}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3 }}
+                          className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-2xl hover:border-primary/20 transition-all duration-300 flex flex-col h-full"
+                        >
+                          <Link to={`/product/${product.id}`} className="flex-1 flex flex-col cursor-pointer">
+                            <div className="relative aspect-square overflow-hidden bg-gray-50">
+                              <img
+                                src={product.images[0] || 'https://via.placeholder.com/400?text=No+Image'}
+                                alt={product.name}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              />
+                              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl text-[10px] font-bold uppercase tracking-wider text-primary flex items-center space-x-1 shadow-sm">
+                                <i className="ri-plant-line"></i>
+                                <span>Farm Fresh</span>
+                              </div>
+                              {product.stock_quantity === 0 && (
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                                  <span className="bg-red-500 text-white px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-xs">Out of Stock</span>
+                                </div>
+                              )}
+                            </div>
 
-                      <div className="mb-4">
-                        <span className="text-2xl font-bold text-gray-900">₹{product.price}</span>
-                      </div>
+                            <div className="p-6 flex-1 flex flex-col">
+                              <h3 className="font-bold text-gray-900 mb-2 truncate group-hover:text-primary transition-colors text-lg">
+                                {product.name}
+                              </h3>
 
-                      <button 
-                        onClick={() => handleWhatsAppOrder(product)}
-                        className="w-full bg-green-600 text-white py-3 rounded-full font-semibold hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 cursor-pointer whitespace-nowrap"
-                      >
-                        <i className="ri-whatsapp-line text-xl"></i>
-                        <span>Order on WhatsApp</span>
-                      </button>
+                              {/* <div className="flex items-center space-x-2 mb-4">
+                                <div className="flex items-center text-yellow-400">
+                                  <i className="ri-star-fill text-sm"></i>
+                                  <i className="ri-star-fill text-sm"></i>
+                                  <i className="ri-star-fill text-sm"></i>
+                                  <i className="ri-star-fill text-sm"></i>
+                                  <i className="ri-star-fill text-sm"></i>
+                                </div>
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Verified</span>
+                              </div> */}
 
-                      {product.inStock && (
-                        <div className="mt-3 flex items-center justify-center space-x-1 text-xs text-green-600">
-                          <i className="ri-checkbox-circle-fill"></i>
-                          <span>In Stock</span>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                              <div className="flex items-center justify-between mt-auto mb-4">
+                                <span className="text-3xl font-black text-gray-900 font-sans">₹{product.price}</span>
+                                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-wider">{product.category}</span>
+                              </div>
+                            </div>
+                          </Link>
+
+                          <div className="px-6 pb-6">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleWhatsAppOrder(product);
+                              }}
+                              disabled={product.stock_quantity === 0}
+                              className="w-full bg-[#25D366] text-white py-4 rounded-2xl font-bold hover:bg-[#128C7E] transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-green-100 disabled:opacity-50 disabled:grayscale"
+                            >
+                              <i className="ri-whatsapp-line text-xl"></i>
+                              <span>Order on WhatsApp</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    {loadingMore && [...Array(3)].map((_, i) => <ProductSkeleton key={`more-${i}`} />)}
+                  </>
+                )}
               </div>
+
+              {!loading && products.length === 0 && (
+                <div className="text-center py-24 bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
+                  <i className="ri-search-line text-6xl text-gray-300 mb-4 block"></i>
+                  <p className="text-xl font-bold text-gray-900">No products found</p>
+                  <p className="text-gray-500 mt-2">Try selecting a different category or clearing filters</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      <WhatsAppOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        product={selectedOrderProduct || undefined}
+      />
       <Footer />
       <WhatsAppButton />
     </div>
