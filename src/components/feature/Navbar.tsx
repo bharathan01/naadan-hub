@@ -142,10 +142,10 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   className={`text-sm font-medium transition-colors whitespace-nowrap ${location.pathname === link.path
-                      ? isScrolled ? 'text-primary' : 'text-white'
-                      : isScrolled
-                        ? 'text-gray-700 hover:text-primary'
-                        : 'text-white/90 hover:text-white'
+                    ? isScrolled ? 'text-primary' : 'text-white'
+                    : isScrolled
+                      ? 'text-gray-700 hover:text-primary'
+                      : 'text-white/90 hover:text-white'
                     }`}
                 >
                   {link.name}
@@ -171,7 +171,7 @@ export default function Navbar() {
 
               {/* WhatsApp */}
               <a
-                href="https://wa.me/919876543210"
+                href="https://wa.me/919746155376"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden md:flex w-10 h-10 items-center justify-center cursor-pointer"
@@ -210,8 +210,8 @@ export default function Navbar() {
                         <p className="text-sm text-gray-600">{user.email}</p>
                         {role && role !== 'user' && (
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${role === 'admin'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-green-100 text-green-800'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-green-100 text-green-800'
                             }`}>
                             {role === 'admin' ? 'Admin' : 'Seller'}
                           </span>
@@ -259,8 +259,8 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors cursor-pointer whitespace-nowrap ${isScrolled
-                      ? 'bg-primary text-white hover:bg-primary/90'
-                      : 'bg-white text-primary hover:bg-white/90'
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'bg-white text-primary hover:bg-white/90'
                     }`}
                 >
                   <i className="ri-user-line text-lg"></i>
@@ -328,8 +328,8 @@ export default function Navbar() {
                 to={link.path}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`block py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${location.pathname === link.path
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-gray-700 hover:bg-gray-50'
                   }`}
               >
                 {link.name}
@@ -338,7 +338,7 @@ export default function Navbar() {
 
             {/* Mobile WhatsApp Link */}
             <a
-              href="https://wa.me/919876543210"
+              href="https://wa.me/919746155376"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-3 py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer"

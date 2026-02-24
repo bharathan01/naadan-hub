@@ -30,7 +30,7 @@ export default function SiteContent() {
       id: '3',
       section: 'footer_contact',
       title: 'Footer Contact Information',
-      content: 'Address: Kottayam, Kerala, India | Phone: +91 98765 43210 | Email: info@naadanhub.com',
+      content: 'Address: Kottayam, Kerala, India | Phone: +9197461 55376 | Email: info@naadanhub.com',
       updated_at: '2024-01-13'
     },
     {
@@ -67,14 +67,14 @@ export default function SiteContent() {
 
   const handleUpdateContent = () => {
     if (editingSection) {
-      setContentSections(contentSections.map(section => 
-        section.id === editingSection.id 
-          ? { 
-              ...section, 
-              title: formData.title,
-              content: formData.content,
-              updated_at: new Date().toISOString().split('T')[0]
-            }
+      setContentSections(contentSections.map(section =>
+        section.id === editingSection.id
+          ? {
+            ...section,
+            title: formData.title,
+            content: formData.content,
+            updated_at: new Date().toISOString().split('T')[0]
+          }
           : section
       ));
       setEditingSection(null);
@@ -129,7 +129,7 @@ export default function SiteContent() {
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10`}>
                   <i className={`${getSectionIcon(section.section)} text-2xl text-primary`}></i>
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -142,7 +142,7 @@ export default function SiteContent() {
                       Updated: {new Date(section.updated_at).toLocaleDateString()}
                     </span>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <p className="text-gray-700 leading-relaxed">{section.content}</p>
                   </div>
@@ -246,7 +246,7 @@ export default function SiteContent() {
               <h3 className="text-xl font-bold text-gray-900">Edit Content</h3>
               <p className="text-gray-600 mt-1">Update the content for this section</p>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Section Title</label>
@@ -276,7 +276,7 @@ export default function SiteContent() {
                   <div>
                     <h4 className="font-medium text-blue-900">Content Guidelines</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Keep content clear, concise, and aligned with your brand voice. 
+                      Keep content clear, concise, and aligned with your brand voice.
                       For contact information, use the format: Address | Phone | Email for easy parsing.
                     </p>
                   </div>

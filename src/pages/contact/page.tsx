@@ -144,7 +144,7 @@ export default function ContactPage() {
                         value={formData.phone}
                         onChange={handleChange}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        placeholder="+91 98765 43210"
+                        placeholder="+9197461 55376"
                       />
                     </div>
                     <div>
@@ -230,7 +230,7 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Call Us</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    +91 98765 43210<br />
+                    +9197461 55376<br />
                     Mon-Sat: 9:00 AM - 6:00 PM
                   </p>
                 </div>
@@ -253,7 +253,7 @@ export default function ContactPage() {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">WhatsApp</h3>
                   <p className="text-gray-600 mb-3">Quick support via WhatsApp</p>
                   <a
-                    href="https://wa.me/919876543210"
+                    href="https://wa.me/919746155376"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center space-x-2 text-primary font-semibold hover:underline cursor-pointer"

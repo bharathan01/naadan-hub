@@ -258,9 +258,14 @@ export default function OrderManagement() {
                     <td className="px-8 py-6">
                       <div className="space-y-1">
                         {order.order_items?.map((item: any) => (
-                          <div key={item.id} className="text-[11px] text-gray-600 font-bold flex items-center space-x-2">
-                            <span className="bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded font-black">{item.quantity}</span>
-                            <span className="truncate max-w-[120px]">{item.product_name}</span>
+                          <div key={item.id} className="text-[11px] text-gray-600 font-bold flex flex-col space-y-0.5">
+                            <div className="flex items-center space-x-2">
+                              <span className="bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded font-black">{item.quantity}</span>
+                              <span className="truncate max-w-[120px]">{item.product_name}</span>
+                            </div>
+                            <span className="text-[9px] text-gray-400 uppercase italic ml-7">
+                              Seller: {item.products?.profiles?.store_name || 'N/A'}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -396,7 +401,9 @@ export default function OrderManagement() {
                           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary font-black shadow-sm border border-gray-100">{item.quantity}</div>
                           <div>
                             <p className="font-black text-gray-900 text-sm">{item.product_name}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">₹{item.unit_price} per unit</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              ₹{item.unit_price} per unit • {item.products?.profiles?.store_name}
+                            </p>
                           </div>
                         </div>
                         <p className="font-black text-gray-900">₹{item.quantity * item.unit_price}</p>

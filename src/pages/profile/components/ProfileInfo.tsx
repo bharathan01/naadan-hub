@@ -170,7 +170,7 @@ export default function ProfileInfo({ user }: ProfileInfoProps) {
                 onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                 disabled={!isEditing}
                 className="w-full pl-11 pr-4 py-3 border-2 border-gray-100 rounded-xl focus:border-primary focus:outline-none transition-all disabled:bg-gray-50 disabled:text-gray-400"
-                placeholder="+91 98765 43210"
+                placeholder="+9197461 55376"
               />
             </div>
           </div>

@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { authService } from '../../services/auth.service';
+import toast from 'react-hot-toast';
 
 export default function SellerRegisterPage() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal Info
@@ -12,21 +15,21 @@ export default function SellerRegisterPage() {
     phone: '',
     password: '',
     confirmPassword: '',
-    
+
     // Farm Info
     farmName: '',
     farmSize: '',
     farmType: 'Organic',
     location: '',
     district: '',
-    
+
     // Additional Info
     products: [] as string[],
     experience: '',
     certifications: '',
     description: '',
     whatsapp: '',
-    
+
     agreeToTerms: false
   });
 
@@ -61,14 +64,14 @@ export default function SellerRegisterPage() {
         return;
       }
     }
-    
+
     if (step === 2) {
       if (!formData.farmName || !formData.location || !formData.district) {
         alert('Please fill all required fields');
         return;
       }
     }
-    
+
     setStep(step + 1);
   };
 
@@ -76,17 +79,38 @@ export default function SellerRegisterPage() {
     setStep(step - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.agreeToTerms) {
-      alert('Please agree to the terms and conditions');
+      toast.error('Please agree to the terms and conditions');
       return;
     }
 
-    // TODO: Implement seller registration logic
-    console.log('Seller registration:', formData);
-    // navigate('/seller-login');
+    try {
+      setLoading(true);
+
+      await authService.signUp(formData.email, formData.password, {
+        full_name: formData.farmerName,
+        role: 'seller',
+        phone: formData.phone,
+        store_name: formData.farmName,
+        location: formData.location,
+        district: formData.district,
+        farm_size: formData.farmSize,
+        farm_type: formData.farmType,
+        registration_products: formData.products,
+        is_verified_seller: false
+      });
+
+      toast.success('Registration successful! Please wait for admin approval.');
+      navigate('/');
+    } catch (error: any) {
+      console.error('Seller registration error:', error);
+      toast.error(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -112,15 +136,13 @@ export default function SellerRegisterPage() {
           <div className="flex items-center justify-between">
             {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
-                  step >= s ? 'bg-white text-green-600' : 'bg-white/30 text-white'
-                }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s ? 'bg-white text-green-600' : 'bg-white/30 text-white'
+                  }`}>
                   {s}
                 </div>
                 {s < 3 && (
-                  <div className={`flex-1 h-1 mx-2 rounded transition-all ${
-                    step > s ? 'bg-white' : 'bg-white/30'
-                  }`}></div>
+                  <div className={`flex-1 h-1 mx-2 rounded transition-all ${step > s ? 'bg-white' : 'bg-white/30'
+                    }`}></div>
                 )}
               </div>
             ))}
@@ -182,7 +204,7 @@ export default function SellerRegisterPage() {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors text-sm"
-                      placeholder="+91 98765 43210"
+                      placeholder="+9197461 55376"
                       required
                     />
                   </div>
@@ -197,7 +219,7 @@ export default function SellerRegisterPage() {
                     value={formData.whatsapp}
                     onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors text-sm"
-                    placeholder="+91 98765 43210"
+                    placeholder="+9197461 55376"
                   />
                 </div>
 
@@ -355,11 +377,10 @@ export default function SellerRegisterPage() {
                     {productCategories.map((product) => (
                       <label
                         key={product}
-                        className={`flex items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                          formData.products.includes(product)
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`flex items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${formData.products.includes(product)
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -447,7 +468,7 @@ export default function SellerRegisterPage() {
                   Back
                 </button>
               )}
-              
+
               {step < 3 ? (
                 <button
                   type="button"
@@ -460,10 +481,20 @@ export default function SellerRegisterPage() {
               ) : (
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors cursor-pointer whitespace-nowrap"
+                  disabled={loading}
+                  className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <i className="ri-check-line mr-2"></i>
-                  Submit Registration
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    <>
+                      <i className="ri-check-line mr-2"></i>
+                      Submit Registration
+                    </>
+                  )}
                 </button>
               )}
             </div>

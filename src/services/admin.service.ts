@@ -38,27 +38,63 @@ export const adminService = {
         return data;
     },
 
+    async updateUserStatus(userId: string, is_active: boolean) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update({ is_active })
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
     // Platform Analytics
     async getPlatformStats() {
-        const { data: usersCount, error: userError } = await supabase
+        const { count: usersCount } = await supabase
             .from('profiles')
             .select('id', { count: 'exact', head: true });
 
-        const { data: productsCount, error: prodError } = await supabase
+        const { count: productsCount } = await supabase
             .from('products')
             .select('id', { count: 'exact', head: true });
 
-        const { data: ordersCount, error: orderError } = await supabase
+        const { count: ordersCount } = await supabase
             .from('orders')
             .select('id', { count: 'exact', head: true });
 
-        if (userError || prodError || orderError) throw (userError || prodError || orderError);
+        const { count: pendingOrdersCount } = await supabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'pending');
+
+        const { count: sellersCount } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'seller');
+
+        const { count: pendingSellersCount } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'seller')
+            .eq('is_verified_seller', false);
+
+        const { data: revenueData } = await supabase
+            .from('orders')
+            .select('total_amount')
+            .eq('status', 'delivered');
+
+        const totalRevenue = revenueData?.reduce((acc, order) => acc + Number(order.total_amount), 0) || 0;
 
         return {
             totalUsers: usersCount || 0,
             totalProducts: productsCount || 0,
             totalOrders: ordersCount || 0,
-            // Add more stats as needed
+            pendingOrders: pendingOrdersCount || 0,
+            totalSellers: sellersCount || 0,
+            pendingSellers: pendingSellersCount || 0,
+            totalRevenue: totalRevenue
         };
     },
 
@@ -171,7 +207,7 @@ export const adminService = {
     async getAllOrders() {
         const { data, error } = await supabase
             .from('orders')
-            .select('*, order_items(*)')
+            .select('*, order_items(*, products(seller_id, profiles(store_name)))')
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -188,5 +224,82 @@ export const adminService = {
 
         if (error) throw error;
         return data;
+    },
+
+    // Blog Management
+    async getAllBlogsAdmin() {
+        const { data, error } = await supabase
+            .from('blogs')
+            .select('*, author:profiles(full_name)')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    },
+
+    async createBlog(blog: Partial<Blog>) {
+        const { data, error } = await supabase
+            .from('blogs')
+            .insert([blog])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async updateBlog(id: string, updates: Partial<Blog>) {
+        const { data, error } = await supabase
+            .from('blogs')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async deleteBlog(id: string) {
+        const { error } = await supabase
+            .from('blogs')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    async uploadBlogImage(file: File) {
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const filePath = `blogs/${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from('naadan-hub')
+            .upload(filePath, file);
+
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('naadan-hub')
+            .getPublicUrl(filePath);
+
+        return publicUrl;
     }
 };
+
+export interface Blog {
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+    excerpt: string;
+    category: string;
+    featured_image: string;
+    author_id: string;
+    status: 'draft' | 'published' | 'archived';
+    created_at: string;
+    updated_at: string;
+    author?: {
+        full_name: string;
+    };
+}

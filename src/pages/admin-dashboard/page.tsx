@@ -8,6 +8,7 @@ import OrderManagement from './components/OrderManagement';
 import SiteContent from './components/SiteContent';
 import SellerManagement from './components/SellerManagement';
 import CategoryManagement from './components/CategoryManagement';
+import UserManagement from './components/UserManagement';
 import { adminService } from '../../services/admin.service';
 
 export default function AdminDashboard() {
@@ -16,12 +17,23 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalProducts: 0,
-    totalBlogs: 0,
+    totalUsers: 0,
+    totalOrders: 0,
     pendingOrders: 0,
     totalSellers: 0,
     pendingApprovals: 0,
     monthlyRevenue: 0
   });
+
+  const [productModal, setProductModal] = useState({
+    isOpen: false,
+    sellerId: ''
+  });
+
+  const handleAddProduct = (sellerId: string = '') => {
+    setProductModal({ isOpen: true, sellerId });
+    setActiveTab('products');
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -29,12 +41,13 @@ export default function AdminDashboard() {
         setLoading(true);
         const data = await adminService.getPlatformStats();
         setStats({
-          totalProducts: typeof data.totalProducts === 'number' ? data.totalProducts : 0,
-          totalBlogs: 0,
-          pendingOrders: typeof data.totalOrders === 'number' ? data.totalOrders : 0,
-          totalSellers: 0,
-          pendingApprovals: 0,
-          monthlyRevenue: 0
+          totalProducts: data.totalProducts || 0,
+          totalUsers: data.totalUsers || 0,
+          totalOrders: data.totalOrders || 0,
+          pendingOrders: data.pendingOrders || 0,
+          totalSellers: data.totalSellers || 0,
+          pendingApprovals: data.pendingSellers || 0,
+          monthlyRevenue: data.totalRevenue || 0
         });
       } catch (err: any) {
         setError(err.message || 'Failed to fetch platform statistics');
@@ -112,11 +125,23 @@ export default function AdminDashboard() {
                   <div className="bg-white rounded-xl shadow-sm p-6 border">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-600">Blog Posts</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalBlogs}</p>
+                        <p className="text-sm font-medium text-gray-600">Total Users</p>
+                        <p className="text-2xl font-bold text-gray-800">{stats.totalUsers || 0}</p>
                       </div>
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                        <i className="ri-article-line text-2xl text-green-600"></i>
+                        <i className="ri-user-heart-line text-2xl text-green-600"></i>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm p-6 border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalOrders || 0}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i className="ri-list-ordered text-2xl text-blue-600"></i>
                       </div>
                     </div>
                   </div>
@@ -125,10 +150,10 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</p>
+                        <p className="text-2xl font-bold text-yellow-600">{stats.pendingOrders || 0}</p>
                       </div>
                       <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                        <i className="ri-truck-line text-2xl text-yellow-600"></i>
+                        <i className="ri-time-line text-2xl text-yellow-600"></i>
                       </div>
                     </div>
                   </div>
@@ -239,11 +264,19 @@ export default function AdminDashboard() {
                 </motion.div>
               )}
 
-              {activeTab === 'products' && <ProductManagement />}
-              {activeTab === 'categories' && <CategoryManagement />}
+              {activeTab === 'users' && <UserManagement />}
               {activeTab === 'blogs' && <BlogManagement />}
+
+              {activeTab === 'products' && (
+                <ProductManagement
+                  initialOpenModal={productModal.isOpen}
+                  initialSellerId={productModal.sellerId}
+                  onModalClose={() => setProductModal({ isOpen: false, sellerId: '' })}
+                />
+              )}
+              {activeTab === 'categories' && <CategoryManagement />}
               {activeTab === 'orders' && <OrderManagement />}
-              {activeTab === 'sellers' && <SellerManagement />}
+              {activeTab === 'sellers' && <SellerManagement onAddProduct={handleAddProduct} />}
               {activeTab === 'content' && <SiteContent />}
             </div>
           </div>

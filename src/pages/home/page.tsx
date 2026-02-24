@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import { blogService, Blog as BlogType } from '../../services/blog.service';
 
 interface Product {
   id: number;
@@ -14,15 +15,10 @@ interface Product {
   stock: number;
 }
 
-interface Blog {
-  id: number;
-  title: string;
-  excerpt: string;
-  image: string;
-  date: string;
-}
+// Removing local Blog interface as we import BlogType from service
 
 const categories = [
+  // ... existing categories
   {
     name: 'Naadan Chips',
     count: 15,
@@ -49,7 +45,7 @@ const featuredProducts = [
     name: 'Naadan Banana Chips - 500g',
     price: 180,
     rating: 5,
-    whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Naadan%20Banana%20Chips',
+    whatsappLink: 'https://wa.me/919746155376?text=I%20want%20to%20order%20Naadan%20Banana%20Chips',
     image: 'https://readdy.ai/api/search-image?query=crispy%20Kerala%20banana%20chips%20in%20transparent%20package%20golden%20yellow%20color%20traditional%20homemade%20snack%20simple%20white%20background%20authentic%20product%20photography&width=400&height=400&seq=prod1&orientation=squarish'
   },
   {
@@ -57,7 +53,7 @@ const featuredProducts = [
     name: 'Fresh Tapioca - 1kg',
     price: 60,
     rating: 5,
-    whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Fresh%20Tapioca',
+    whatsappLink: 'https://wa.me/919746155376?text=I%20want%20to%20order%20Fresh%20Tapioca',
     image: 'https://readdy.ai/api/search-image?query=fresh%20tapioca%20cassava%20root%20peeled%20and%20whole%20on%20simple%20white%20background%20Kerala%20traditional%20vegetable%20natural%20organic%20farm%20fresh&width=400&height=400&seq=prod2&orientation=squarish'
   },
   {
@@ -65,7 +61,7 @@ const featuredProducts = [
     name: 'Bay Leaf Powder - 100g',
     price: 120,
     rating: 5,
-    whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Bay%20Leaf%20Powder',
+    whatsappLink: 'https://wa.me/919746155376?text=I%20want%20to%20order%20Bay%20Leaf%20Powder',
     image: 'https://readdy.ai/api/search-image?query=bay%20leaf%20powder%20in%20glass%20jar%20with%20fresh%20bay%20leaves%20on%20simple%20white%20background%20Kerala%20spice%20organic%20natural%20aromatic&width=400&height=400&seq=prod3&orientation=squarish'
   },
   {
@@ -73,7 +69,7 @@ const featuredProducts = [
     name: 'Tapioca Chips - 250g',
     price: 150,
     rating: 5,
-    whatsappLink: 'https://wa.me/919876543210?text=I%20want%20to%20order%20Tapioca%20Chips',
+    whatsappLink: 'https://wa.me/919746155376?text=I%20want%20to%20order%20Tapioca%20Chips',
     image: 'https://readdy.ai/api/search-image?query=crispy%20tapioca%20chips%20cassava%20chips%20in%20package%20on%20simple%20white%20background%20Kerala%20traditional%20snack%20homemade%20natural&width=400&height=400&seq=prod4&orientation=squarish'
   }
 ];
@@ -183,6 +179,7 @@ const heroSlides = [
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [latestBlogs, setLatestBlogs] = useState<BlogType[]>([]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -190,6 +187,18 @@ export default function HomePage() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const loadLatestBlogs = async () => {
+      try {
+        const blogs = await blogService.getLatestBlogs(3);
+        setLatestBlogs(blogs);
+      } catch (error) {
+        console.error('Failed to load latest blogs:', error);
+      }
+    };
+    loadLatestBlogs();
   }, []);
 
   // Auto-slide effect
@@ -211,7 +220,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar scrolled={scrolled} />
+      <Navbar />
       <WhatsAppButton />
 
       {/* Hero Section with Auto-Slider */}
@@ -271,11 +280,10 @@ export default function HomePage() {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
-                currentSlide === index
-                  ? 'bg-white w-8'
-                  : 'bg-white/50 hover:bg-white/75'
-              }`}
+              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${currentSlide === index
+                ? 'bg-white w-8'
+                : 'bg-white/50 hover:bg-white/75'
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -540,38 +548,44 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {blogPosts.map((post) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <Link to={`/blog/${post.id}`} className="group block cursor-pointer">
-                  <div className="rounded-2xl overflow-hidden mb-5 h-64">
-                    <img
-                      src={post.image}
-                      alt={post.title}
-                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full mb-3">
-                    {post.category}
-                  </span>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
-                  <div className="flex items-center space-x-3 text-sm text-gray-500">
-                    <span>{post.author}</span>
-                    <span>•</span>
-                    <span>{post.date}</span>
-                    <span>•</span>
-                    <span>{post.readTime} read</span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+            {latestBlogs.length === 0 ? (
+              <div className="lg:col-span-3 text-center py-10 text-gray-500">
+                Loading latest stories...
+              </div>
+            ) : (
+              latestBlogs.map((post) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                >
+                  <Link to={`/blog/${post.id}`} className="group block cursor-pointer">
+                    <div className="rounded-2xl overflow-hidden mb-5 h-64">
+                      <img
+                        src={post.featured_image || 'https://via.placeholder.com/800x600?text=Naadan+Hub'}
+                        alt={post.title}
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full mb-3 uppercase">
+                      {post.category}
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
+                    <div className="flex items-center space-x-3 text-sm text-gray-500">
+                      <span>{post.author?.full_name || 'Admin'}</span>
+                      <span>•</span>
+                      <span>{new Date(post.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                      <span>•</span>
+                      <span>5 min read</span>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">

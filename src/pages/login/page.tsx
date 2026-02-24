@@ -173,21 +173,17 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Other Login Options */}
+          {/* Seller Registration CTA */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-600 mb-3">Looking for something else?</p>
-            <div className="flex gap-3">
+            <div className="bg-green-50 rounded-2xl p-6 text-center">
+              <p className="text-sm font-semibold text-green-800 mb-2">Want to sell your products?</p>
+              <p className="text-xs text-green-600 mb-4">Join our community of local farmers and sellers.</p>
               <Link
-                to="/admin-login"
-                className="flex-1 text-center py-2 px-4 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+                to="/seller-register"
+                className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-green-700 transition-all cursor-pointer shadow-md w-full justify-center"
               >
-                Admin Login
-              </Link>
-              <Link
-                to="/seller-login"
-                className="flex-1 text-center py-2 px-4 border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                Seller Login
+                <i className="ri-store-2-line"></i>
+                Register as Seller
               </Link>
             </div>
           </div>

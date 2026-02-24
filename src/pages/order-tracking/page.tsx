@@ -41,7 +41,7 @@ const mockOrder: OrderDetails = {
   estimatedDelivery: "2024-01-18",
   currentStatus: "shipped",
   customerName: "Priya Sharma",
-  customerPhone: "+91 98765 43210",
+  customerPhone: "+9197461 55376",
   deliveryAddress: "123, MG Road, Kochi, Kerala - 682001",
   items: [
     {
@@ -103,7 +103,7 @@ export default function OrderTrackingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderIdFromUrl = searchParams.get('orderId');
-  
+
   const [orderIdInput, setOrderIdInput] = useState(orderIdFromUrl || '');
   const [phoneInput, setPhoneInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -124,19 +124,19 @@ export default function OrderTrackingPage() {
   const handleTrackOrder = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!orderIdInput.trim()) {
       setError('Please enter your Order ID');
       return;
     }
-    
+
     if (!phoneInput.trim()) {
       setError('Please enter your Phone Number');
       return;
     }
 
     setLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setOrder(mockOrder);
@@ -228,7 +228,7 @@ export default function OrderTrackingPage() {
                       type="tel"
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="+9197461 55376"
                       className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary transition-colors"
                     />
                   </div>
@@ -317,7 +317,7 @@ export default function OrderTrackingPage() {
                 className="bg-white border-2 border-gray-200 rounded-3xl p-6 md:p-8"
               >
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-8">Order Status</h3>
-                
+
                 {/* Desktop Progress Bar */}
                 <div className="hidden md:block">
                   <div className="flex items-center justify-between mb-4">
@@ -385,9 +385,8 @@ export default function OrderTrackingPage() {
                     {order.trackingHistory.map((status, index) => (
                       <div key={index} className="flex gap-4">
                         <div className="flex flex-col items-center">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            index === 0 ? 'bg-primary' : 'bg-green-500'
-                          }`}>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${index === 0 ? 'bg-primary' : 'bg-green-500'
+                            }`}>
                             <i className="ri-checkbox-circle-fill text-xl text-white"></i>
                           </div>
                           {index < order.trackingHistory.length - 1 && (

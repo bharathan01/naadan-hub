@@ -52,7 +52,7 @@ export default function DeliveryAddresses({ userId }: DeliveryAddressesProps) {
         console.error('Error loading addresses:', error);
         return;
       }
-      
+
       if (data) setAddresses(data);
     } catch (error) {
       console.error('Error loading addresses:', error);
@@ -72,7 +72,7 @@ export default function DeliveryAddresses({ userId }: DeliveryAddressesProps) {
           .from('delivery_addresses')
           .update(formData)
           .eq('id', editingId);
-        
+
         if (error) throw error;
       } else {
         const { error } = await supabase
@@ -81,10 +81,10 @@ export default function DeliveryAddresses({ userId }: DeliveryAddressesProps) {
             user_id: userId,
             ...formData,
           });
-        
+
         if (error) throw error;
       }
-      
+
       resetForm();
       await loadAddresses();
     } catch (error) {
@@ -114,16 +114,16 @@ export default function DeliveryAddresses({ userId }: DeliveryAddressesProps) {
         .from('delivery_addresses')
         .update({ is_default: false })
         .eq('user_id', userId);
-      
+
       if (error1) throw error1;
-      
+
       const { error: error2 } = await supabase
         .from('delivery_addresses')
         .update({ is_default: true })
         .eq('id', id);
-      
+
       if (error2) throw error2;
-      
+
       await loadAddresses();
     } catch (error) {
       console.error('Error setting default address:', error);
@@ -212,7 +212,7 @@ export default function DeliveryAddresses({ userId }: DeliveryAddressesProps) {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="+91 98765 43210"
+                placeholder="+9197461 55376"
                 required
               />
             </div>

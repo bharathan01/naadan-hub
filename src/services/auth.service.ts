@@ -8,6 +8,13 @@ export interface UserProfile {
   phone?: string;
   store_name?: string;
   is_verified_seller?: boolean;
+  location?: string;
+  district?: string;
+  farm_size?: string;
+  farm_type?: string;
+  registration_products?: string[];
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export const authService = {

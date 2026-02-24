@@ -46,8 +46,8 @@ const mockSeller: SellerProfile = {
   farm_name: "Green Valley Organic Farm",
   location: "Kottayam",
   district: "Kottayam",
-  phone: "+91 98765 43210",
-  whatsapp: "919876543210",
+  phone: "+9197461 55376",
+  whatsapp: "919746155376",
   email: "ravi@greenvalley.com",
   farm_size: "5 Acres",
   farm_type: "Organic",
@@ -196,7 +196,7 @@ export default function SellerProfilePage() {
                   </span>
                 </div>
                 <p className="text-lg md:text-xl text-gray-700 mb-4">by {seller.farmer_name}</p>
-                
+
                 <div className="flex flex-wrap gap-3 md:gap-4 text-sm md:text-base text-gray-600 mb-6">
                   <div className="flex items-center gap-2">
                     <i className="ri-map-pin-line text-primary"></i>
@@ -287,31 +287,28 @@ export default function SellerProfilePage() {
             <div className="flex gap-2 border-b-2 border-gray-200 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('about')}
-                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  activeTab === 'about'
-                    ? 'text-primary border-b-2 border-primary -mb-0.5'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'about'
+                  ? 'text-primary border-b-2 border-primary -mb-0.5'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 About Farm
               </button>
               <button
                 onClick={() => setActiveTab('products')}
-                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  activeTab === 'products'
-                    ? 'text-primary border-b-2 border-primary -mb-0.5'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'products'
+                  ? 'text-primary border-b-2 border-primary -mb-0.5'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Products ({products.length})
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
-                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  activeTab === 'reviews'
-                    ? 'text-primary border-b-2 border-primary -mb-0.5'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-colors cursor-pointer whitespace-nowrap ${activeTab === 'reviews'
+                  ? 'text-primary border-b-2 border-primary -mb-0.5'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Reviews
               </button>
@@ -472,9 +469,8 @@ export default function SellerProfilePage() {
                         </div>
                         <div className="flex items-center justify-between mb-4 text-xs md:text-sm text-gray-600">
                           <span>Sold: {product.sold}</span>
-                          <span className={`px-2 py-1 rounded-full ${
-                            product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full ${product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                            }`}>
                             {product.status}
                           </span>
                         </div>

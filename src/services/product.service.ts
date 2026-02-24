@@ -145,5 +145,26 @@ export const productService = {
         if (itemsError) throw itemsError;
 
         return order;
+    },
+    async uploadProductImages(files: File[]) {
+        const imageUrls = [];
+        for (const file of files) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+            const filePath = `products/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('products')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('products')
+                .getPublicUrl(filePath);
+
+            imageUrls.push(publicUrl);
+        }
+        return imageUrls;
     }
 };

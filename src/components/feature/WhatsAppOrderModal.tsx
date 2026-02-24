@@ -107,7 +107,7 @@ export default function WhatsAppOrderModal({ isOpen, onClose, product, quantity 
                 `*Total: ₹${total_amount}*`
             ].filter(line => line !== null && line !== '').join('\n');
 
-            const whatsappUrl = `https://wa.me/919876543210?text=${encodeURIComponent(message)}`;
+            const whatsappUrl = `https://wa.me/919746155376?text=${encodeURIComponent(message)}`;
 
             toast.success('Order placed and saving details!');
             window.open(whatsappUrl, '_blank');
