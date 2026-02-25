@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { blogService, Blog as BlogType } from '../../services/blog.service';
+import { siteService } from '../../services/site.service';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 interface Product {
   id: number;
@@ -15,10 +18,8 @@ interface Product {
   stock: number;
 }
 
-// Removing local Blog interface as we import BlogType from service
-
-const categories = [
-  // ... existing categories
+// Default fallbacks for site content
+const DEFAULT_CATEGORIES = [
   {
     name: 'Naadan Chips',
     count: 15,
@@ -39,7 +40,7 @@ const categories = [
   }
 ];
 
-const featuredProducts = [
+const DEFAULT_FEATURED_PRODUCTS = [
   {
     id: 1,
     name: 'Naadan Banana Chips - 500g',
@@ -71,39 +72,6 @@ const featuredProducts = [
     rating: 5,
     whatsappLink: 'https://wa.me/919746155376?text=I%20want%20to%20order%20Tapioca%20Chips',
     image: 'https://readdy.ai/api/search-image?query=crispy%20tapioca%20chips%20cassava%20chips%20in%20package%20on%20simple%20white%20background%20Kerala%20traditional%20snack%20homemade%20natural&width=400&height=400&seq=prod4&orientation=squarish'
-  }
-];
-
-const blogPosts = [
-  {
-    id: 1,
-    title: 'Benefits of Black Soldier Fly Larvae in Poultry Farming',
-    excerpt: 'Discover how BSF larvae can improve your poultry health and reduce feed costs significantly.',
-    category: 'Farming Tips',
-    author: 'Dr. Rajesh Kumar',
-    date: 'Jan 15, 2025',
-    readTime: '5 min',
-    image: 'https://readdy.ai/api/search-image?query=poultry%20chickens%20eating%20black%20soldier%20fly%20larvae%20sustainable%20farming%20healthy%20birds%20natural%20feed%20clean%20simple%20background%20professional%20photography&width=800&height=600&seq=blog1&orientation=landscape'
-  },
-  {
-    id: 2,
-    title: 'How to Start Your Own BSF Farm at Home',
-    excerpt: 'A complete guide to setting up a small-scale black soldier fly farming operation.',
-    category: 'Getting Started',
-    author: 'Priya Menon',
-    date: 'Jan 12, 2025',
-    readTime: '8 min',
-    image: 'https://readdy.ai/api/search-image?query=black%20soldier%20fly%20farming%20setup%20home%20scale%20sustainable%20agriculture%20equipment%20containers%20clean%20simple%20background%20professional%20photography&width=800&height=600&seq=blog2&orientation=landscape'
-  },
-  {
-    id: 3,
-    title: 'BSF Frass: The Ultimate Organic Fertilizer',
-    excerpt: 'Learn why BSF frass is becoming the preferred choice for organic farmers across Kerala.',
-    category: 'Organic Farming',
-    author: 'Anil Thomas',
-    date: 'Jan 10, 2025',
-    readTime: '6 min',
-    image: 'https://readdy.ai/api/search-image?query=organic%20garden%20vegetables%20growing%20with%20natural%20fertilizer%20healthy%20plants%20sustainable%20agriculture%20clean%20simple%20background%20professional%20photography&width=800&height=600&seq=blog3&orientation=landscape'
   }
 ];
 
@@ -152,7 +120,7 @@ const testimonials = [
   }
 ];
 
-const heroSlides = [
+const DEFAULT_HERO_SLIDES = [
   {
     title: 'Naadan Hub - Farm to Your Table',
     subtitle: 'Direct from Kerala farmers to buyers. Fresh agricultural products, traditional snacks, and organic spices. Support local farmers, get authentic quality products at fair prices.',
@@ -177,9 +145,28 @@ const heroSlides = [
 ];
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [latestBlogs, setLatestBlogs] = useState<BlogType[]>([]);
+
+  // Dynamic Content States
+  const [heroSlides, setHeroSlides] = useState(DEFAULT_HERO_SLIDES);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [featuredProducts, setFeaturedProducts] = useState(DEFAULT_FEATURED_PRODUCTS);
+  const [aboutMission, setAboutMission] = useState({
+    aboutTitle: 'Why Choose Naadan Hub?',
+    aboutText: 'Kerala\'s trusted agricultural marketplace connecting farmers directly with buyers. Get fresh farm products, traditional snacks, and organic spices at fair prices while supporting local farmers.',
+    aboutImage: 'https://readdy.ai/api/search-image?query=variety%20of%20Kerala%20traditional%20chips%20banana%20chips%20tapioca%20chips%20jackfruit%20chips%20arranged%20beautifully%20on%20wooden%20plate%20authentic%20homemade%20snacks%20natural%20lighting&width=800&height=600&seq=chips1&orientation=landscape',
+    missionTitle: 'Naturally Grown, Traditionally Harvested',
+    missionText: 'Our mission is to create a sustainable marketplace that empowers farmers and promotes organic agriculture.',
+    missionPoints: [
+      'Direct from Kerala farmers. No middlemen, fair prices.',
+      'Quality checked and sourced from verified farmers.',
+      'Order directly through WhatsApp. Chat and negotiate.'
+    ]
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -190,27 +177,44 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const loadLatestBlogs = async () => {
+    const loadDynamicContent = async () => {
       try {
-        const blogs = await blogService.getLatestBlogs(3);
-        setLatestBlogs(blogs);
+        const [blogs, hero, about, cats, bestsellers] = await Promise.all([
+          blogService.getLatestBlogs(3),
+          siteService.getSiteContent('hero_slides'),
+          siteService.getSiteContent('about_mission'),
+          siteService.getSiteContent('featured_categories'),
+          siteService.getSiteContent('bestsellers')
+        ]);
+
+        if (blogs) setLatestBlogs(blogs);
+        if (hero) setHeroSlides(hero);
+        if (about) setAboutMission(about);
+        if (cats) setCategories(cats);
+        if (bestsellers) setFeaturedProducts(bestsellers);
       } catch (error) {
-        console.error('Failed to load latest blogs:', error);
+        console.error('Failed to load dynamic site content:', error);
       }
     };
-    loadLatestBlogs();
+    loadDynamicContent();
   }, []);
 
   // Auto-slide effect
   useEffect(() => {
+    if (heroSlides.length === 0) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 5000); // Change slide every 5 seconds
+    }, 5000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [heroSlides.length]);
 
   const handleWhatsAppOrder = (product: any) => {
+    if (!user) {
+      toast.error('Please login to order products');
+      navigate('/login', { state: { returnTo: '/' } });
+      return;
+    }
     window.open(product.whatsappLink, '_blank');
   };
 
@@ -234,7 +238,7 @@ export default function HomePage() {
             transition={{ duration: 0.7 }}
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
-              backgroundImage: `url(${heroSlides[currentSlide].image})`
+              backgroundImage: `url(${heroSlides[currentSlide]?.image || DEFAULT_HERO_SLIDES[0].image})`
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/50"></div>
@@ -251,23 +255,23 @@ export default function HomePage() {
               transition={{ duration: 0.5 }}
             >
               <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-                {heroSlides[currentSlide].title}
+                {heroSlides[currentSlide]?.title}
               </h1>
               <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed">
-                {heroSlides[currentSlide].subtitle}
+                {heroSlides[currentSlide]?.subtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  to={currentSlide === 1 ? '/products?category=chips' : currentSlide === 2 ? '/products' : '/products'}
+                  to="/products"
                   className="bg-primary text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-primary/90 transition-all transform hover:scale-105 shadow-lg cursor-pointer whitespace-nowrap"
                 >
-                  {heroSlides[currentSlide].cta1}
+                  {heroSlides[currentSlide]?.cta1 || 'Browse Products'}
                 </Link>
                 <Link
-                  to={currentSlide === 2 ? '/order-tracking' : '/seller-profile'}
+                  to="/seller-register"
                   className="bg-white text-primary px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg cursor-pointer whitespace-nowrap"
                 >
-                  {heroSlides[currentSlide].cta2}
+                  {heroSlides[currentSlide]?.cta2 || 'Become a Seller'}
                 </Link>
               </div>
             </motion.div>
@@ -299,10 +303,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Why Choose Naadan Hub?
+              {aboutMission.aboutTitle}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Kerala&apos;s trusted agricultural marketplace connecting farmers directly with buyers. Get fresh farm products, traditional snacks, and organic spices at fair prices while supporting local farmers.
+              {aboutMission.aboutText}
             </p>
           </div>
 
@@ -315,7 +319,7 @@ export default function HomePage() {
                 Direct from Farmers
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Buy directly from Kerala farmers. No middlemen, fair prices for farmers, fresh quality products for you. Support local agriculture and get authentic products.
+                {aboutMission.missionPoints[0] || 'Buy directly from Kerala farmers. No middlemen, fair prices for farmers.'}
               </p>
             </div>
 
@@ -327,7 +331,7 @@ export default function HomePage() {
                 Quality Assured
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                All products are quality checked and sourced from verified farmers. Fresh, organic, and traditionally processed products you can trust.
+                {aboutMission.missionPoints[1] || 'Fresh, organic, and traditionally processed products you can trust.'}
               </p>
             </div>
 
@@ -339,7 +343,7 @@ export default function HomePage() {
                 Easy WhatsApp Orders
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Order directly through WhatsApp. Chat with farmers, negotiate prices, and close deals easily. Simple, fast, and convenient.
+                {aboutMission.missionPoints[2] || 'Order directly through WhatsApp. Chat with farmers and close deals easily.'}
               </p>
             </div>
           </div>

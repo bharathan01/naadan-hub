@@ -4,6 +4,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import { orderService, Order } from '../../services/order.service';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 interface OrderStatus {
   status: string;
@@ -92,36 +95,116 @@ const mockOrder: OrderDetails = {
 };
 
 const statusSteps = [
-  { key: 'placed', label: 'Order Placed', icon: 'ri-shopping-cart-line' },
-  { key: 'confirmed', label: 'Confirmed', icon: 'ri-checkbox-circle-line' },
-  { key: 'packed', label: 'Packed', icon: 'ri-box-3-line' },
+  { key: 'pending', label: 'Order Placed', icon: 'ri-shopping-cart-line' },
+  { key: 'processing', label: 'Processing', icon: 'ri-time-line' },
   { key: 'shipped', label: 'Shipped', icon: 'ri-truck-line' },
   { key: 'delivered', label: 'Delivered', icon: 'ri-home-smile-line' }
 ];
 
 export default function OrderTrackingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const orderIdFromUrl = searchParams.get('orderId');
 
   const [orderIdInput, setOrderIdInput] = useState(orderIdFromUrl || '');
   const [phoneInput, setPhoneInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState<OrderDetails | null>(orderIdFromUrl ? mockOrder : null);
+  const [order, setOrder] = useState<OrderDetails | null>(null);
+  const [userOrders, setUserOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (orderIdFromUrl) {
-      // Simulate loading order data
-      setLoading(true);
-      setTimeout(() => {
-        setOrder(mockOrder);
-        setLoading(false);
-      }, 1000);
-    }
-  }, [orderIdFromUrl]);
+  const mapOrderData = (data: any): OrderDetails => {
+    const subtotal = data.order_items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+    // Estimated delivery 3 days after created_at
+    const createdDate = new Date(data.created_at);
+    const estimatedDate = new Date(createdDate);
+    estimatedDate.setDate(createdDate.getDate() + 3);
 
-  const handleTrackOrder = (e: React.FormEvent) => {
+    return {
+      orderId: data.id,
+      orderDate: createdDate.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      estimatedDelivery: estimatedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      currentStatus: data.status,
+      customerName: data.customer_name,
+      customerPhone: data.customer_phone,
+      deliveryAddress: `${data.address_line1}${data.address_line2 ? ', ' + data.address_line2 : ''}, ${data.city}, ${data.state} - ${data.postal_code}`,
+      items: data.order_items.map((item: any) => ({
+        id: item.id,
+        name: item.product_name,
+        quantity: item.quantity,
+        price: item.unit_price,
+        image: item.products?.images?.[0] || 'https://via.placeholder.com/200?text=Product'
+      })),
+      subtotal,
+      deliveryFee: data.total_amount - subtotal,
+      total: data.total_amount,
+      paymentMethod: data.order_type === 'whatsapp' ? 'WhatsApp Order (COD/Direct)' : 'Online Payment',
+      trackingHistory: [
+        {
+          status: 'Order Placed',
+          timestamp: createdDate.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+          location: data.city,
+          description: 'Your order has been successfully placed.'
+        },
+        ...(data.status !== 'pending' ? [{
+          status: data.status.charAt(0).toUpperCase() + data.status.slice(1),
+          timestamp: new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+          location: 'Processing Center',
+          description: `Order is currently ${data.status}.`
+        }] : [])
+      ]
+    };
+  };
+
+  useEffect(() => {
+    if (user) {
+      const fetchUserOrders = async () => {
+        try {
+          setLoadingOrders(true);
+          const orders = await orderService.getMyOrders();
+          setUserOrders(orders);
+        } catch (err) {
+          console.error('Error fetching user orders:', err);
+        } finally {
+          setLoadingOrders(false);
+        }
+      };
+      fetchUserOrders();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (orderIdFromUrl) {
+        setLoading(true);
+        try {
+          // If we have search params but not the phone, we might not be able to fetch if not logged in
+          // However, if the user is logged in, we can try to find it in their orders
+          let foundOrder = null;
+          if (user) {
+            const orders = await orderService.getMyOrders();
+            foundOrder = orders.find((o: any) => o.id === orderIdFromUrl);
+          }
+
+          if (foundOrder) {
+            setOrder(mapOrderData(foundOrder));
+          } else {
+            // Need phone for guest tracking, but here we just show error if not found in user orders
+            setError('Could not find order. Please use the form to track with Phone Number.');
+          }
+        } catch (err) {
+          setError('Failed to load order details.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchOrderDetails();
+  }, [orderIdFromUrl, user]);
+
+  const handleTrackOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -136,22 +219,28 @@ export default function OrderTrackingPage() {
     }
 
     setLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setOrder(mockOrder);
+    try {
+      const data = await orderService.getOrderByIdAndPhone(orderIdInput, phoneInput);
+      if (data) {
+        setOrder(mapOrderData(data));
+        navigate(`/order-tracking?orderId=${orderIdInput}`);
+      } else {
+        setError('Order not found. Please check your credentials.');
+      }
+    } catch (err) {
+      setError('Failed to track order. Please try again.');
+    } finally {
       setLoading(false);
-      navigate(`/order-tracking?orderId=${orderIdInput}`);
-    }, 1000);
+    }
   };
 
   const getCurrentStepIndex = () => {
     const statusMap: { [key: string]: number } = {
       'pending': 0,
-      'confirmed': 1,
-      'packed': 2,
-      'shipped': 3,
-      'delivered': 4
+      'processing': 1,
+      'shipped': 2,
+      'delivered': 3,
+      'cancelled': -1
     };
     return statusMap[order?.currentStatus || 'pending'] || 0;
   };
@@ -171,7 +260,7 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-32 pb-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -256,18 +345,69 @@ export default function OrderTrackingPage() {
                   </button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-xs text-gray-600 text-center mb-3">
-                    You can find your Order ID in the confirmation email or SMS
-                  </p>
-                  <button
-                    onClick={() => navigate('/profile')}
-                    className="w-full text-primary text-sm font-semibold hover:underline cursor-pointer whitespace-nowrap"
-                  >
-                    View My Orders
-                  </button>
-                </div>
               </div>
+
+              {/* User Recent Orders List */}
+              {user && (
+                <div className="mt-12">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                    <i className="ri-history-line text-primary"></i>
+                    Your Recent Orders
+                  </h3>
+                  {loadingOrders ? (
+                    <div className="flex justify-center py-8">
+                      <i className="ri-loader-4-line text-3xl text-primary animate-spin"></i>
+                    </div>
+                  ) : userOrders.length > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {userOrders.slice(0, 4).map((orderItem) => (
+                        <div
+                          key={orderItem.id}
+                          onClick={() => {
+                            setOrder(mapOrderData(orderItem));
+                            setOrderIdInput(orderItem.id);
+                            navigate(`/order-tracking?orderId=${orderItem.id}`);
+                          }}
+                          className="bg-white border-2 border-gray-100 rounded-2xl p-4 hover:border-primary transition-all cursor-pointer group"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">
+                              #{orderItem.id.slice(0, 8)}...
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${orderItem.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              orderItem.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                              {orderItem.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <i className="ri-shopping-bag-line text-gray-600"></i>
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">₹{orderItem.total_amount}</p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(orderItem.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-2xl p-8 text-center border-2 border-dashed border-gray-200">
+                      <p className="text-gray-500">You haven't placed any orders yet.</p>
+                      <button
+                        onClick={() => navigate('/products')}
+                        className="mt-3 text-primary font-bold text-sm hover:underline cursor-pointer"
+                      >
+                        Start Shopping
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           ) : (
             /* Order Tracking Details */

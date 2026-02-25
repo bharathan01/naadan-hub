@@ -22,18 +22,18 @@ export default function BSFEducationPage() {
   ];
 
   const applications = [
-    { 
-      title: 'Poultry Farming', 
+    {
+      title: 'Poultry Farming',
       image: 'https://readdy.ai/api/search-image?query=healthy%20chickens%20in%20organic%20farm%20eating%20natural%20feed%20Kerala%20poultry%20farming%20green%20environment%20sustainable%20agriculture&width=600&height=400&seq=app1&orientation=landscape',
       description: 'Perfect for chickens, ducks, and quails. Improves egg production, meat quality, and overall bird health.'
     },
-    { 
-      title: 'Aquaculture', 
+    {
+      title: 'Aquaculture',
       image: 'https://readdy.ai/api/search-image?query=fish%20farming%20pond%20with%20healthy%20fish%20sustainable%20aquaculture%20Kerala%20natural%20environment%20clean%20water&width=600&height=400&seq=app2&orientation=landscape',
       description: 'Ideal for fish, prawns, and other aquatic species. Enhances growth rate and survival rates.'
     },
-    { 
-      title: 'Livestock Feed', 
+    {
+      title: 'Livestock Feed',
       image: 'https://readdy.ai/api/search-image?query=healthy%20livestock%20animals%20in%20natural%20farm%20setting%20Kerala%20sustainable%20farming%20green%20pasture&width=600&height=400&seq=app3&orientation=landscape',
       description: 'Suitable for pigs, goats, and cattle. Provides essential nutrients for optimal growth.'
     },
@@ -49,8 +49,8 @@ export default function BSFEducationPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
+      <Navbar variant="solid" />
+
       <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-olive to-primary">
           <div className="absolute inset-0 opacity-10" style={{

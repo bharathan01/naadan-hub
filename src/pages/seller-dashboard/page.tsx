@@ -124,7 +124,7 @@ export default function SellerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-24 pb-12">
         {/* Print-only CSS */}

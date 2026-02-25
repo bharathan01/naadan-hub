@@ -2,8 +2,19 @@ import { Link } from 'react-router-dom';
 import { useSiteContent } from '../../hooks/useSiteContent';
 
 export default function Footer() {
-  const { content: contactContent, loading: contactLoading } = useSiteContent('contact');
-  const { content: socialContent, loading: socialLoading } = useSiteContent('social');
+  const { content: footerContent, loading } = useSiteContent('footer_info');
+
+  const defaultSocials = {
+    facebook: 'https://facebook.com/naadanhub',
+    instagram: 'https://instagram.com/naadanhub',
+    twitter: 'https://twitter.com/naadanhub',
+    whatsapp: 'https://wa.me/919746155376'
+  };
+
+  const socials = footerContent?.socials || defaultSocials;
+  const address = footerContent?.address || 'Kottayam, Kerala, India';
+  const phone = footerContent?.phone || '+91 97461 55376';
+  const email = footerContent?.email || 'info@naadanhub.com';
 
   return (
     <footer className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white">
@@ -16,9 +27,9 @@ export default function Footer() {
               Kerala's trusted source for premium agricultural products including BSF larvae, organic fertilizers, and quality farming supplies.
             </p>
             <div className="flex space-x-4">
-              {!socialLoading && socialContent?.facebook && (
+              {socials.facebook && (
                 <a
-                  href={socialContent.facebook}
+                  href={socials.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
@@ -26,9 +37,9 @@ export default function Footer() {
                   <i className="ri-facebook-fill text-xl"></i>
                 </a>
               )}
-              {!socialLoading && socialContent?.instagram && (
+              {socials.instagram && (
                 <a
-                  href={socialContent.instagram}
+                  href={socials.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
@@ -36,14 +47,24 @@ export default function Footer() {
                   <i className="ri-instagram-line text-xl"></i>
                 </a>
               )}
-              {!socialLoading && socialContent?.twitter && (
+              {socials.twitter && (
                 <a
-                  href={socialContent.twitter}
+                  href={socials.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
                 >
                   <i className="ri-twitter-fill text-xl"></i>
+                </a>
+              )}
+              {socials.whatsapp && (
+                <a
+                  href={socials.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+                >
+                  <i className="ri-whatsapp-line text-xl"></i>
                 </a>
               )}
             </div>
@@ -64,23 +85,13 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/bsf-education" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  BSF Education
-                </Link>
-              </li>
-              <li>
                 <Link to="/blog" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  Contact
+                <Link to="/become-seller" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
+                  Become a Seller
                 </Link>
               </li>
             </ul>
@@ -91,23 +102,18 @@ export default function Footer() {
             <h4 className="text-lg font-semibold mb-6">Our Products</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/products?category=larvae" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  BSF Larvae
+                <Link to="/products?category=chips" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
+                  Naadan Chips
                 </Link>
               </li>
               <li>
-                <Link to="/products?category=dried" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  Dried BSF
+                <Link to="/products?category=spices" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
+                  Organic Spices
                 </Link>
               </li>
               <li>
-                <Link to="/products?category=meal" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  BSF Meal
-                </Link>
-              </li>
-              <li>
-                <Link to="/products?category=oil" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
-                  BSF Oil
+                <Link to="/products?category=powders" className="text-emerald-100 hover:text-white transition-colors cursor-pointer">
+                  Spice Powders
                 </Link>
               </li>
             </ul>
@@ -117,37 +123,31 @@ export default function Footer() {
           <div>
             <h4 className="text-lg font-semibold mb-6">Contact Us</h4>
             <ul className="space-y-4">
-              {!contactLoading && contactContent?.phone && (
-                <li className="flex items-start space-x-3">
-                  <i className="ri-phone-line text-xl mt-1"></i>
-                  <div>
-                    <p className="text-emerald-100">Phone</p>
-                    <a href={`tel:${contactContent.phone}`} className="hover:text-white transition-colors cursor-pointer">
-                      {contactContent.phone}
-                    </a>
-                  </div>
-                </li>
-              )}
-              {!contactLoading && contactContent?.email && (
-                <li className="flex items-start space-x-3">
-                  <i className="ri-mail-line text-xl mt-1"></i>
-                  <div>
-                    <p className="text-emerald-100">Email</p>
-                    <a href={`mailto:${contactContent.email}`} className="hover:text-white transition-colors cursor-pointer">
-                      {contactContent.email}
-                    </a>
-                  </div>
-                </li>
-              )}
-              {!contactLoading && contactContent?.address && (
-                <li className="flex items-start space-x-3">
-                  <i className="ri-map-pin-line text-xl mt-1"></i>
-                  <div>
-                    <p className="text-emerald-100">Location</p>
-                    <p>{contactContent.address}</p>
-                  </div>
-                </li>
-              )}
+              <li className="flex items-start space-x-3">
+                <i className="ri-phone-line text-xl mt-1"></i>
+                <div>
+                  <p className="text-emerald-100">Phone</p>
+                  <a href={`tel:${phone}`} className="hover:text-white transition-colors cursor-pointer">
+                    {phone}
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start space-x-3">
+                <i className="ri-mail-line text-xl mt-1"></i>
+                <div>
+                  <p className="text-emerald-100">Email</p>
+                  <a href={`mailto:${email}`} className="hover:text-white transition-colors cursor-pointer">
+                    {email}
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start space-x-3">
+                <i className="ri-map-pin-line text-xl mt-1"></i>
+                <div>
+                  <p className="text-emerald-100">Location</p>
+                  <p>{address}</p>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
@@ -156,9 +156,9 @@ export default function Footer() {
           <p className="text-emerald-100 text-sm">
             © {new Date().getFullYear()} Naadan Hub. All rights reserved.
           </p>
-          <a 
-            href="https://readdy.ai/?ref=logo" 
-            target="_blank" 
+          <a
+            href="https://readdy.ai/?ref=logo"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-100 hover:text-white text-sm transition-colors cursor-pointer mt-4 md:mt-0"
           >

@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function CartPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [cartItems, setCartItems] = useState<any[]>([]);
 
   useEffect(() => {
@@ -41,7 +45,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-32 pb-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -67,8 +71,8 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      
+      <Navbar variant="solid" />
+
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -190,12 +194,19 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <Link
-                  to="/checkout"
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      toast.error('Please login to proceed to checkout');
+                      navigate('/login', { state: { returnTo: '/cart' } });
+                      return;
+                    }
+                    navigate('/checkout');
+                  }}
                   className="block w-full bg-primary text-white py-4 rounded-full font-semibold text-center hover:bg-primary/90 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   Proceed to Checkout
-                </Link>
+                </button>
 
                 <div className="mt-6 space-y-3">
                   <div className="flex items-center space-x-3 text-sm text-gray-600">

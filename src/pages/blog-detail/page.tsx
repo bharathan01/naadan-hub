@@ -40,7 +40,7 @@ export default function BlogDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-48 flex flex-col items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
           <p className="text-gray-500 text-lg">Loading story details...</p>
@@ -53,7 +53,7 @@ export default function BlogDetailPage() {
   if (!article) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-48 text-center">
           <i className="ri-error-warning-line text-6xl text-red-500 mb-4 inline-block"></i>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Blog Post Not Found</h1>
@@ -66,7 +66,7 @@ export default function BlogDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <article className="pt-32 pb-20">
         <div className="relative h-[60vh] mb-12">

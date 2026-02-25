@@ -42,7 +42,7 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

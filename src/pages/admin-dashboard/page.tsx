@@ -9,6 +9,7 @@ import SiteContent from './components/SiteContent';
 import SellerManagement from './components/SellerManagement';
 import CategoryManagement from './components/CategoryManagement';
 import UserManagement from './components/UserManagement';
+import EnquiryManagement from './components/EnquiryManagement';
 import { adminService } from '../../services/admin.service';
 
 export default function AdminDashboard() {
@@ -68,11 +69,12 @@ export default function AdminDashboard() {
     { id: 'users', name: 'Users', icon: 'ri-group-line' },
     { id: 'sellers', name: 'Sellers', icon: 'ri-group-line' },
     { id: 'content', name: 'Site Content', icon: 'ri-edit-line' },
+    { id: 'enquiries', name: 'Enquiries', icon: 'ri-question-answer-line' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -278,6 +280,7 @@ export default function AdminDashboard() {
               {activeTab === 'orders' && <OrderManagement />}
               {activeTab === 'sellers' && <SellerManagement onAddProduct={handleAddProduct} />}
               {activeTab === 'content' && <SiteContent />}
+              {activeTab === 'enquiries' && <EnquiryManagement />}
             </div>
           </div>
         </div>

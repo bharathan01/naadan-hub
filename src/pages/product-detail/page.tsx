@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import WhatsAppOrderModal from '../../components/feature/WhatsAppOrderModal';
 import { productService } from '../../services/product.service';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function ProductDetailPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
@@ -48,6 +51,11 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (!user) {
+      toast.error('Please login to add items to cart');
+      navigate('/login', { state: { returnTo: `/product/${id}` } });
+      return;
+    }
     const cartItem = {
       id: product.id,
       name: product.name,
@@ -74,13 +82,18 @@ export default function ProductDetailPage() {
 
   const handleWhatsAppOrder = () => {
     if (!product) return;
+    if (!user) {
+      toast.error('Please login to order products');
+      navigate('/login', { state: { returnTo: `/product/${id}` } });
+      return;
+    }
     setIsOrderModalOpen(true);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-40 pb-20 flex flex-col items-center justify-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-gray-500 font-medium">Loading traditional goodness...</p>
@@ -93,7 +106,7 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-40 pb-20 text-center">
           <i className="ri-error-warning-line text-6xl text-gray-300 mb-4 block"></i>
           <h1 className="text-2xl font-bold text-gray-900">Product not found</h1>
@@ -107,7 +120,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       {showAddedNotification && (
         <motion.div

@@ -58,7 +58,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+      <Navbar variant="solid" />
       <div className="flex-1 pt-24 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8 font-serif">
@@ -75,8 +75,8 @@ export default function ProfilePage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all cursor-pointer whitespace-nowrap ${activeTab === tab.id
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'text-gray-700 hover:bg-gray-50'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                      : 'text-gray-700 hover:bg-gray-50'
                       }`}
                   >
                     <i className={`${tab.icon} text-xl`}></i>

@@ -132,7 +132,7 @@ export default function SellerProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-32 pb-20 flex items-center justify-center">
           <div className="text-center">
             <i className="ri-loader-4-line text-5xl text-primary animate-spin"></i>
@@ -147,7 +147,7 @@ export default function SellerProfilePage() {
   if (!seller) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
+        <Navbar variant="solid" />
         <div className="pt-32 pb-20 flex items-center justify-center">
           <div className="text-center">
             <i className="ri-error-warning-line text-6xl text-red-500 mb-4"></i>
@@ -168,7 +168,7 @@ export default function SellerProfilePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -5,7 +5,11 @@ import { useAuth } from '../../context/AuthContext';
 import LogoutModal from '../auth/LogoutModal';
 import toast from 'react-hot-toast';
 
-export default function Navbar() {
+interface NavbarProps {
+  variant?: 'transparent' | 'solid';
+}
+
+export default function Navbar({ variant = 'transparent' }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
@@ -64,7 +68,7 @@ export default function Navbar() {
     { name: 'Home', path: '/' },
     { name: 'Products', path: '/products' },
     { name: 'Track Order', path: '/order-tracking' },
-    { name: 'Become Seller', path: '/seller-profile' },
+    { name: 'Become Seller', path: '/become-seller' },
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
@@ -118,7 +122,7 @@ export default function Navbar() {
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || variant === 'solid' ? 'bg-white shadow-md' : 'bg-transparent'
           }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -130,7 +134,7 @@ export default function Navbar() {
                 alt="Naadan Hub Logo"
                 className="h-8 lg:h-12 w-auto"
               />
-              <span className={`text-lg lg:text-2xl font-bold font-serif ${isScrolled ? 'text-primary' : 'text-white'}`}>
+              <span className={`text-lg lg:text-2xl font-bold font-serif ${isScrolled || variant === 'solid' ? 'text-primary' : 'text-white'}`}>
                 Naadan Hub
               </span>
             </Link>
@@ -142,8 +146,8 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   className={`text-sm font-medium transition-colors whitespace-nowrap ${location.pathname === link.path
-                    ? isScrolled ? 'text-primary' : 'text-white'
-                    : isScrolled
+                    ? (isScrolled || variant === 'solid') ? 'text-primary' : 'text-white'
+                    : (isScrolled || variant === 'solid')
                       ? 'text-gray-700 hover:text-primary'
                       : 'text-white/90 hover:text-white'
                     }`}
@@ -159,7 +163,7 @@ export default function Navbar() {
               <Link to="/cart" className="relative cursor-pointer">
                 <button className={`p-2 rounded-full transition-colors cursor-pointer ${isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
                   }`}>
-                  <i className={`ri-shopping-cart-line text-xl ${isScrolled ? 'text-gray-900' : 'text-white'
+                  <i className={`ri-shopping-cart-line text-xl ${isScrolled || variant === 'solid' ? 'text-gray-900' : 'text-white'
                     }`}></i>
                 </button>
                 {cartCount > 0 && (
@@ -176,7 +180,7 @@ export default function Navbar() {
                 rel="noopener noreferrer"
                 className="hidden md:flex w-10 h-10 items-center justify-center cursor-pointer"
               >
-                <i className={`ri-whatsapp-line text-xl ${isScrolled ? 'text-primary' : 'text-white'}`}></i>
+                <i className={`ri-whatsapp-line text-xl ${isScrolled || variant === 'solid' ? 'text-primary' : 'text-white'}`}></i>
               </a>
 
               {/* Profile Menu */}
@@ -184,7 +188,7 @@ export default function Navbar() {
                 <div className="relative profile-menu">
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className={`flex items-center space-x-2 p-2 rounded-full transition-colors cursor-pointer ${isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
+                    className={`flex items-center space-x-2 p-2 rounded-full transition-colors cursor-pointer ${isScrolled || variant === 'solid' ? 'hover:bg-gray-100' : 'hover:bg-white/20'
                       }`}
                   >
                     <div className={`w-8 h-8 rounded-full bg-primary flex items-center justify-center ${isScrolled ? 'text-white' : 'text-white'
@@ -193,7 +197,7 @@ export default function Navbar() {
                         {userName.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <i className={`ri-arrow-down-s-line text-lg hidden lg:block ${isScrolled ? 'text-gray-700' : 'text-white'
+                    <i className={`ri-arrow-down-s-line text-lg hidden lg:block ${isScrolled || variant === 'solid' ? 'text-gray-700' : 'text-white'
                       }`}></i>
                   </button>
 
@@ -258,7 +262,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/login"
-                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors cursor-pointer whitespace-nowrap ${isScrolled
+                  className={`hidden sm:flex items-center space-x-2 px-4 py-2 rounded-full font-medium transition-colors cursor-pointer whitespace-nowrap ${isScrolled || variant === 'solid'
                     ? 'bg-primary text-white hover:bg-primary/90'
                     : 'bg-white text-primary hover:bg-white/90'
                     }`}
@@ -271,7 +275,7 @@ export default function Navbar() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`lg:hidden w-10 h-10 flex items-center justify-center cursor-pointer ${isScrolled ? 'text-gray-700' : 'text-white'
+                className={`lg:hidden w-10 h-10 flex items-center justify-center cursor-pointer ${isScrolled || variant === 'solid' ? 'text-gray-700' : 'text-white'
                   }`}
               >
                 <i className={`${isMobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'} text-2xl`}></i>

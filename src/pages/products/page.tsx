@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import WhatsAppOrderModal from '../../components/feature/WhatsAppOrderModal';
 import { productService, Product } from '../../services/product.service';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const ITEMS_PER_PAGE = 6;
@@ -27,6 +28,8 @@ const ProductSkeleton = () => (
 );
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
   const [products, setProducts] = useState<Product[]>([]);
@@ -114,13 +117,18 @@ export default function ProductsPage() {
   };
 
   const handleWhatsAppOrder = (product: Product) => {
+    if (!user) {
+      toast.error('Please login to order products');
+      navigate('/login', { state: { returnTo: '/products' } });
+      return;
+    }
     setSelectedOrderProduct(product);
     setIsOrderModalOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

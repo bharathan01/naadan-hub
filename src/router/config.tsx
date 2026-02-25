@@ -15,6 +15,7 @@ const CheckoutPage = lazy(() => import('../pages/checkout/page'));
 const ProfilePage = lazy(() => import('../pages/profile/page'));
 const OrderTrackingPage = lazy(() => import('../pages/order-tracking/page'));
 const SellerProfilePage = lazy(() => import('../pages/seller-profile/page'));
+const BecomeSellerPage = lazy(() => import('../pages/become-seller/page'));
 const LoginPage = lazy(() => import('../pages/login/page'));
 const RegisterPage = lazy(() => import('../pages/register/page'));
 const SellerRegisterPage = lazy(() => import('../pages/seller-register/page'));
@@ -60,8 +61,12 @@ const routes: RouteObject[] = [
     element: <OrderTrackingPage />,
   },
   {
-    path: '/seller-profile',
+    path: '/seller-profile/:id',
     element: <SellerProfilePage />,
+  },
+  {
+    path: '/become-seller',
+    element: <BecomeSellerPage />,
   },
   {
     path: '/cart',
@@ -69,11 +74,19 @@ const routes: RouteObject[] = [
   },
   {
     path: '/checkout',
-    element: <CheckoutPage />,
+    element: (
+      <ProtectedRoute>
+        <CheckoutPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/profile',
-    element: <ProfilePage />,
+    element: (
+      <ProtectedRoute>
+        <ProfilePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/login',

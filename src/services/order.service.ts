@@ -45,5 +45,17 @@ export const orderService = {
 
         if (error) throw error;
         return data;
+    },
+
+    async getOrderByIdAndPhone(orderId: string, phone: string) {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*, order_items(*, products(*))')
+            .eq('id', orderId)
+            .eq('customer_phone', phone)
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };

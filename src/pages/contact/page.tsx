@@ -4,6 +4,8 @@ import Navbar from '../../components/feature/Navbar';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useAuth } from '../../context/AuthContext';
+import { enquiryService } from '../../services/enquiry.service';
+import toast from 'react-hot-toast';
 
 export default function ContactPage() {
   const { user, profile } = useAuth();
@@ -15,7 +17,6 @@ export default function ContactPage() {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -36,30 +37,14 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitMessage('');
 
     try {
-      const formBody = new URLSearchParams();
-      Object.entries(formData).forEach(([key, value]) => {
-        formBody.append(key, value);
-      });
-
-      const response = await fetch('https://readdy.ai/api/form/d4si5oh50n8gojamvt50', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formBody.toString(),
-      });
-
-      if (response.ok) {
-        setSubmitMessage('Thank you! We will get back to you soon.');
-        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-      } else {
-        setSubmitMessage('Something went wrong. Please try again.');
-      }
+      await enquiryService.submitEnquiry(formData);
+      toast.success('Thank you! We will get back to you soon.');
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (error) {
-      setSubmitMessage('Failed to send message. Please try again.');
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -74,7 +59,7 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
+      <Navbar variant="solid" />
 
       <div className="pt-32 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -195,13 +180,6 @@ export default function ContactPage() {
                   >
                     {isSubmitting ? 'Sending...' : 'Send Message'}
                   </button>
-
-                  {submitMessage && (
-                    <div className={`mt-4 p-4 rounded-xl ${submitMessage.includes('Thank') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                      }`}>
-                      {submitMessage}
-                    </div>
-                  )}
                 </form>
               </motion.div>
             </div>
